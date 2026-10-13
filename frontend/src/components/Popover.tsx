@@ -11,15 +11,17 @@ type Props = {
   label: string
   trigger: ReactNode
   triggerClassName?: string
+  /** So that a `<label htmlFor>` can point at the button. */
+  triggerId?: string
   /** Which edge of the button the panel lines up with. */
   align?: 'start' | 'end'
   children: (close: () => void) => ReactNode
 }
 
 /** Room the panel needs below the button before it opens upwards instead. */
-const ROOM_BELOW = 280
+const ROOM_BELOW = 330
 
-export function Popover({ label, trigger, triggerClassName, align = 'end', children }: Props) {
+export function Popover({ label, trigger, triggerClassName, triggerId, align = 'end', children }: Props) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -33,6 +35,8 @@ export function Popover({ label, trigger, triggerClassName, align = 'end', child
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      // Inside a <dialog>, Esc must close the panel, not the dialog too.
+      event.preventDefault()
       event.stopPropagation()
       close()
       buttonRef.current?.focus()
@@ -67,6 +71,7 @@ export function Popover({ label, trigger, triggerClassName, align = 'end', child
     <>
       <button
         ref={buttonRef}
+        id={triggerId}
         type="button"
         aria-label={label}
         title={label}

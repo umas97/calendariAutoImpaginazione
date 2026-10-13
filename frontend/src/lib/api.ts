@@ -96,6 +96,35 @@ export type ItemPatch = { name?: string; color?: string; archived?: boolean }
 
 export type OrphanChoice = { orphans: 'delete' } | { orphans: 'reassign'; to: number }
 
+/** An event as the server stores it (SPEC §7.1): wall-clock dates and times. */
+export type EventInput = {
+  title: string
+  start_date: string
+  end_date: string | null
+  all_day: boolean
+  start_time: string | null
+  end_time: string | null
+  place: string
+  notes: string
+  group_ids: number[]
+  /** In the user's order: the first is the main category. */
+  category_ids: number[]
+}
+
+export type CalendarEvent = EventInput & { id: number; created_at: string; updated_at: string }
+
+export type CalendarView = 'month' | 'week' | 'list'
+
+/** `null` means every group (or category), including the ones created later. */
+export type CalendarFilters = { group_ids: number[] | null; category_ids: number[] | null }
+
+export type Settings = {
+  'calendar.view': CalendarView
+  'calendar.filters': CalendarFilters
+  'export.last': unknown
+  'parish.name': string
+}
+
 const json = (body: unknown) => JSON.stringify(body)
 
 export const api = {
@@ -121,4 +150,22 @@ export const api = {
     return request<void>(`/api/${kind}/${id}${query}`, { method: 'DELETE' })
   },
   palette: () => request<string[]>('/api/categories/palette'),
+
+  events: (from: string, to: string) =>
+    request<CalendarEvent[]>(`/api/events?${new URLSearchParams({ from, to })}`),
+  createEvent: (body: EventInput) =>
+    request<CalendarEvent>('/api/events', { method: 'POST', body: json(body) }),
+  updateEvent: (id: number, body: EventInput) =>
+    request<CalendarEvent>(`/api/events/${id}`, { method: 'PUT', body: json(body) }),
+  deleteEvent: (id: number) => request<void>(`/api/events/${id}`, { method: 'DELETE' }),
+  duplicateEvent: (id: number, dates: string[]) =>
+    request<{ ids: number[] }>(`/api/events/${id}/duplicate`, {
+      method: 'POST',
+      body: json({ dates }),
+    }),
+  places: (q: string) => request<string[]>(`/api/places?${new URLSearchParams({ q })}`),
+
+  settings: () => request<Settings>('/api/settings'),
+  putSetting: <K extends keyof Settings>(key: K, value: Settings[K]) =>
+    request<{ key: K; value: Settings[K] }>(`/api/settings/${key}`, { method: 'PUT', body: json({ value }) }),
 }

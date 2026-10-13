@@ -62,7 +62,7 @@ FLATPAK_CANDIDATES: tuple[str, ...] = (
     "com.brave.Browser",
     "com.microsoft.Edge",
 )
-#: Size of a fresh window; the profile remembers it afterwards.
+#: Size of the window when the user un-maximizes it (SPEC §9.1: it opens maximized).
 WINDOW_SIZE = "1280,860"
 
 TAB_NOTE = (
@@ -195,6 +195,7 @@ class WindowHost:
             f"--class={wm_class}",
             f"--name={wm_class}",
             f"--window-size={WINDOW_SIZE}",
+            "--start-maximized",
             "--no-first-run",
             "--no-default-browser-check",
         ]

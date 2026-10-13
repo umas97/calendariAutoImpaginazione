@@ -62,5 +62,7 @@ export default defineConfig({
     outDir: '../backend/cp/static',
     emptyOutDir: true,
     sourcemap: false,
+    // Served from loopback, never downloaded: one bundle of ~540 kB is fine.
+    chunkSizeWarningLimit: 800,
   },
 })

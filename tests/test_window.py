@@ -65,6 +65,7 @@ def test_the_window_is_a_chromium_in_application_mode(tmp_path, xdg_home):
         assert any(a.startswith("--user-data-dir=") and "window-profile" in a for a in argv)
         assert any(a.startswith("--class=") for a in argv)
         assert "--no-first-run" in argv
+        assert "--start-maximized" in argv  # SPEC §9.1
     finally:
         window.close()
     assert not window.alive
