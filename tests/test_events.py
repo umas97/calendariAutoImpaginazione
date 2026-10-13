@@ -105,6 +105,19 @@ def test_at_most_31_days(api, gc):
     assert e["message"] == "Un evento può durare al massimo 31 giorni."
 
 
+def test_notes_are_optional_trimmed_kept_on_several_lines_and_limited(api, gc):
+    assert post(api, body(gc)).json()["notes"] == ""
+    created = post(api, body(gc, notes="  Portare le chiavi\n\nchiamare don Marco \n"))
+    assert created.json()["notes"] == "Portare le chiavi\n\nchiamare don Marco"
+    assert post(api, body(gc, notes="x" * 2000)).status_code == 201
+    e = error(post(api, body(gc, notes="x" * 2001)))
+    assert e["field"] == "notes"
+    assert e["message"] == "Le note possono avere al massimo 2000 caratteri."
+    event_id = created.json()["id"]
+    changed = api.put(f"/api/events/{event_id}", json=body(gc, notes="")).json()
+    assert changed["notes"] == ""
+
+
 def test_place_is_optional_stripped_and_limited(api, gc):
     assert post(api, body(gc)).json()["place"] == ""
     assert post(api, body(gc, place="  Oratorio ")).json()["place"] == "Oratorio"
@@ -302,6 +315,7 @@ def test_duplicate_keeps_everything_and_shifts_the_end(api, gc):
             start_time="18:00",
             end_time="16:00",
             place="Casa alpina",
+            notes="Prenotare il pullman",
             group_ids=[g2, g],
             category_ids=[c2, c],
         ),
@@ -319,7 +333,7 @@ def test_duplicate_keeps_everything_and_shifts_the_end(api, gc):
         ("2026-12-11", "2026-12-13"),
     ]
     for copy in copies:
-        for field in ("title", "all_day", "start_time", "end_time", "place", "group_ids"):
+        for field in ("title", "all_day", "start_time", "end_time", "place", "notes", "group_ids"):
             assert copy[field] == source[field]
         assert copy["category_ids"] == [c2, c]
 

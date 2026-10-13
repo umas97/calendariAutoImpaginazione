@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import sqlite3
 
+from alembic import command
+
 from cp.config import APP_ID
 from cp.db import session as db_session
 from cp.db.session import Database, head_schema_version
@@ -52,7 +54,31 @@ def test_created_from_nothing_and_stable_on_second_start(tmp_path):
     second.dispose()
     assert _schema(path) == schema
     assert _rows(path, "setting") == settings
-    assert _rows(path, "alembic_version") == [("0001",)]
+    assert _rows(path, "alembic_version") == [(f"{head_schema_version():04d}",)]
+
+
+def test_upgrade_keeps_existing_events_and_adds_empty_notes(tmp_path):
+    """A database written by an older version: its events survive the migrations."""
+    path = tmp_path / "catalog.db"
+    old = Database(path)
+    config = db_session.alembic_config()
+    with old.engine.begin() as connection:
+        config.attributes["connection"] = connection
+        command.upgrade(config, "0001")
+        connection.exec_driver_sql(
+            "INSERT INTO event (title, start_date, all_day, start_time, place, created_at,"
+            " updated_at) VALUES ('Messa', '2026-10-18', 0, '10:30', '', '2026-10-13',"
+            " '2026-10-13')"
+        )
+    old.dispose()
+
+    new = Database(path)
+    new.migrate()
+    new.dispose()
+    with sqlite3.connect(path) as connection:
+        rows = connection.execute("SELECT title, notes FROM event").fetchall()
+    assert rows == [("Messa", "")]
+    assert ("schema_version", head_schema_version()) in _rows(path, "setting")
 
 
 def test_pragmas_on_every_connection(tmp_path):

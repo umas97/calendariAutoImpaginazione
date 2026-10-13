@@ -64,6 +64,7 @@ def to_out(event: Event) -> EventOut:
         start_time=event.start_time,
         end_time=event.end_time,
         place=event.place,
+        notes=event.notes,
         group_ids=event.group_ids,
         category_ids=event.category_ids,
         created_at=event.created_at,
@@ -103,6 +104,7 @@ def _apply(event: Event, clean: CleanEvent) -> None:
     event.start_time = clean.start_time
     event.end_time = clean.end_time
     event.place = clean.place
+    event.notes = clean.notes
     _set_links(event, clean.group_ids, clean.category_ids)
 
 
@@ -147,7 +149,7 @@ def delete_event(session: Session, event_id: int) -> None:
 
 
 def duplicate_event(session: Session, event_id: int, dates: Iterable[dt.date]) -> list[int]:
-    """Copy an event onto each date, keeping times, length, place and links (test 8)."""
+    """Copy an event onto each date, keeping times, length, place, notes and links (test 8)."""
     source = get_event(session, event_id)
     unique = sorted(set(dates))
     if not unique:
@@ -165,6 +167,7 @@ def duplicate_event(session: Session, event_id: int, dates: Iterable[dt.date]) -
             start_time=source.start_time,
             end_time=source.end_time,
             place=source.place,
+            notes=source.notes,
         )
         _set_links(copy, source.group_ids, source.category_ids)
         copies.append(copy)

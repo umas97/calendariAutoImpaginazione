@@ -26,6 +26,7 @@ from sqlalchemy import (
     Integer,
     LargeBinary,
     String,
+    Text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -98,6 +99,8 @@ class Event(Base):
     start_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     end_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     place: Mapped[str] = mapped_column(String(120), default="")
+    #: For the coordinator only: shown in the program, never in an export.
+    notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=now)
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime, default=now, onupdate=now)
 

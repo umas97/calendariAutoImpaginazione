@@ -25,6 +25,7 @@ from .schemas import EventIn
 
 TITLE_MAX = 120
 PLACE_MAX = 120
+NOTES_MAX = 2000
 #: Counted inclusively: from the 1st to the 31st of a month is allowed.
 MAX_DAYS = 31
 
@@ -37,6 +38,7 @@ MSG_END_BEFORE_START_TIME = "L'ora di fine deve essere dopo l'inizio."
 MSG_END_BEFORE_START_DATE = "La data di fine è prima della data di inizio."
 MSG_TOO_LONG = "Un evento può durare al massimo 31 giorni."
 MSG_PLACE = "Il luogo può avere al massimo 120 caratteri."
+MSG_NOTES = "Le note possono avere al massimo 2000 caratteri."
 MSG_NO_GROUP = "Scegli almeno un gruppo."
 MSG_NO_CATEGORY = "Scegli almeno una categoria."
 
@@ -50,6 +52,7 @@ class CleanEvent:
     start_time: str | None
     end_time: str | None
     place: str
+    notes: str
     group_ids: list[int]
     category_ids: list[int]
 
@@ -99,6 +102,11 @@ def clean_event(data: EventIn) -> CleanEvent:
     if len(place) > PLACE_MAX:
         problems.append(FieldError("place", MSG_PLACE))
 
+    # Line breaks inside are the user's; only the ends are trimmed.
+    notes = data.notes.strip()
+    if len(notes) > NOTES_MAX:
+        problems.append(FieldError("notes", MSG_NOTES))
+
     group_ids = _unique(data.group_ids)
     if not group_ids:
         problems.append(FieldError("group_ids", MSG_NO_GROUP))
@@ -116,6 +124,7 @@ def clean_event(data: EventIn) -> CleanEvent:
         start_time=start_time,
         end_time=end_time,
         place=place,
+        notes=notes,
         group_ids=group_ids,
         category_ids=category_ids,
     )
