@@ -77,8 +77,48 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   return (await response.json()) as T
 }
 
+/** Groups and categories share one shape and one set of routes (SPEC §6). */
+export type Kind = 'groups' | 'categories'
+
+export type Group = {
+  id: number
+  name: string
+  position: number
+  archived: boolean
+  event_count: number
+}
+
+export type Category = Group & { color: string }
+
+export type TaxonomyItem = Group & { color?: string }
+
+export type ItemPatch = { name?: string; color?: string; archived?: boolean }
+
+export type OrphanChoice = { orphans: 'delete' } | { orphans: 'reassign'; to: number }
+
+const json = (body: unknown) => JSON.stringify(body)
+
 export const api = {
   health: () => request<{ status: string; app: string; version: string }>('/api/health'),
   window: () => request<WindowInfo>('/api/window'),
   quit: () => request<{ detail: string }>('/api/app/quit', { method: 'POST' }),
+
+  /** Archived items included: the interface filters, so reordering sees them all. */
+  items: (kind: Kind) => request<TaxonomyItem[]>(`/api/${kind}?include_archived=true`),
+  createItem: (kind: Kind, name: string) =>
+    request<TaxonomyItem>(`/api/${kind}`, { method: 'POST', body: json({ name }) }),
+  updateItem: (kind: Kind, id: number, patch: ItemPatch) =>
+    request<TaxonomyItem>(`/api/${kind}/${id}`, { method: 'PATCH', body: json(patch) }),
+  reorderItems: (kind: Kind, ids: number[]) =>
+    request<void>(`/api/${kind}/reorder`, { method: 'POST', body: json({ ids }) }),
+  itemUsage: (kind: Kind, id: number) =>
+    request<{ events: number; orphans: number }>(`/api/${kind}/${id}/usage`),
+  deleteItem: (kind: Kind, id: number, choice?: OrphanChoice) => {
+    const params = new URLSearchParams()
+    if (choice) params.set('orphans', choice.orphans)
+    if (choice?.orphans === 'reassign') params.set('to', String(choice.to))
+    const query = params.size ? `?${params}` : ''
+    return request<void>(`/api/${kind}/${id}${query}`, { method: 'DELETE' })
+  },
+  palette: () => request<string[]>('/api/categories/palette'),
 }

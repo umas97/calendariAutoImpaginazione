@@ -9,6 +9,7 @@ from fastapi import APIRouter, Response, status
 from ..db.models import Category, Group
 from ..db.session import session_scope
 from ..domain import taxonomy
+from ..domain.palette import PALETTE
 from ..domain.schemas import (
     CategoryIn,
     CategoryOut,
@@ -103,6 +104,12 @@ def list_categories(include_archived: bool = False) -> list[CategoryOut]:
     with session_scope() as session:
         rows = taxonomy.list_items(session, CATEGORIES, include_archived)
         return [_category_out(*row) for row in rows]
+
+
+@categories.get("/palette")
+def palette() -> list[str]:
+    """The default colours, in assignment order: the colour picker offers these first."""
+    return list(PALETTE)
 
 
 @categories.post("", status_code=status.HTTP_201_CREATED)

@@ -121,6 +121,10 @@ def test_colours_are_assigned_from_the_palette_then_start_again(api):
     assert colors[10] == PALETTE[0]
 
 
+def test_palette_is_served_in_assignment_order(api):
+    assert api.get("/api/categories/palette").json() == list(PALETTE)
+
+
 # --- test 9 and 10: deletion and orphans ---------------------------------------------
 
 
