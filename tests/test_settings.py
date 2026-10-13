@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Test 22: settings -- known keys only, validated values, vanished ids dropped."""
 
@@ -45,7 +45,7 @@ def test_export_last_round_trip(api):
         "formats": ["pdf", "png"],
         "dpi": 300,
         "selections": [{"group_id": group, "category_ids": [category]}],
-        "output_dir": "/home/utente/Documenti/Calendari parrocchia",
+        "output_dir": "/home/utente/Documenti/calendariAutoImpaginazione",
     }
     assert api.put("/api/settings/export.last", json={"value": value}).status_code == 200
     assert api.get("/api/settings").json()["export.last"] == value

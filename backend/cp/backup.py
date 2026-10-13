@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Backups: made now, made every day, and restored (SPEC §10.4; tests 23-24).
 
@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from . import folders
-from .config import APP_ID, get_settings
+from .config import APP_ID, LEGACY_APP_IDS, get_settings
 from .db.session import APP_KEY, SCHEMA_VERSION_KEY, Database, get_database, head_schema_version
 from .domain.errors import Conflict, Forbidden, Invalid, NotFound
 from .export.output import clean_name, reserve_path
@@ -46,10 +46,10 @@ _AUTO_NAME = re.compile(r"^auto-\d{4}-\d{2}-\d{2}\.db$")
 _PARTIAL = ".partial"
 _SIDECARS = ("-wal", "-shm", "-journal")
 
-NOT_OURS = "Il file scelto non è un backup di calendariParrocchia."
+NOT_OURS = "Il file scelto non è un backup di calendariAutoImpaginazione."
 DAMAGED = "Il file scelto è danneggiato: non si può ripristinare."
 TOO_NEW = (
-    "Questo backup è stato fatto con una versione più recente di calendariParrocchia: "
+    "Questo backup è stato fatto con una versione più recente di calendariAutoImpaginazione: "
     "aggiorna il programma prima di ripristinarlo."
 )
 IN_USE = "Questo è il database in uso, non un backup: scegli un altro file."
@@ -58,12 +58,12 @@ NO_WRITE = "Non hai il permesso di scrivere in questa cartella."
 
 
 def backups_dir() -> Path:
-    """Where the automatic backups go: ``~/.local/share/calendariparrocchia/backups/``."""
+    """Where the automatic backups go: ``~/.local/share/calendariautoimpaginazione/backups/``."""
     return get_settings().data_dir / "backups"
 
 
 def default_name(today: dt.date) -> str:
-    return f"calendariParrocchia backup {today.isoformat()}.db"
+    return f"calendariAutoImpaginazione backup {today.isoformat()}.db"
 
 
 def default_folder() -> Path:
@@ -189,7 +189,7 @@ def identify(path: Path) -> BackupInfo:
                     (APP_KEY, SCHEMA_VERSION_KEY),
                 ).fetchall()
             )
-            if _setting(rows.get(APP_KEY)) != APP_ID:
+            if _setting(rows.get(APP_KEY)) not in (APP_ID, *LEGACY_APP_IDS):
                 raise Invalid(NOT_OURS, field="path")
             version = _setting(rows.get(SCHEMA_VERSION_KEY))
             if not isinstance(version, int):

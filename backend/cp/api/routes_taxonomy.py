@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """``/api/groups`` and ``/api/categories``: the same routes for both kinds (SPEC §6)."""
 

@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // How an event looks inside FullCalendar, and the panel that appears over it

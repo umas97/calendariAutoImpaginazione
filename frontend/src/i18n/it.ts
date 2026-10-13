@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Every string the user can read lives here: no visible literal in a component,
@@ -11,8 +11,9 @@ import { itExport } from './it.export'
 import { itTaxonomy } from './it.taxonomy'
 
 export const it = {
-  'app.name': 'calendariParrocchia',
-  'app.description': 'Calendario dei gruppi parrocchiali con fogli A4 da distribuire.',
+  'app.name': 'calendariAutoImpaginazione',
+  'app.description':
+    'Calendario delle attività che impagina da sé i fogli A4 da distribuire: uno per gruppo, con i soli eventi che lo riguardano.',
   'nav.calendar': 'Calendario',
   'nav.taxonomy': 'Gruppi e categorie',
   'nav.export': 'Export',
@@ -26,13 +27,22 @@ export const it = {
   'menu.about': 'Informazioni',
   'about.title': 'Informazioni',
   'about.version': 'Versione {version}',
-  'about.offline': 'Funziona senza Internet: i dati restano su questo computer.',
+  'about.features': 'Cosa fa',
+  'about.feature.calendar':
+    'Calendario: viste Mese, Settimana ed Elenco, filtri, eventi spostabili trascinandoli e duplicabili su più date. Le note di un evento restano private e non finiscono mai nei fogli.',
+  'about.feature.taxonomy':
+    'Gruppi e categorie: ogni evento appartiene a uno o più gruppi e ha una o più categorie, ciascuna con il suo colore.',
+  'about.feature.export':
+    'Export: PDF da stampare o PNG da condividere, un foglio per gruppo in ordine cronologico. Ogni foglio si adatta da solo alla pagina A4, con intestazione e logo a scelta.',
+  'about.data': 'I tuoi dati',
+  'about.offline':
+    'Funziona senza Internet e non invia nulla: i dati restano su questo computer. Ogni giorno, all’avvio, viene salvato un backup automatico (restano gli ultimi 14); dal menu «⋯» puoi farne uno quando vuoi o ripristinarlo.',
   'about.license': 'Software libero, distribuito con licenza GPL-3.0 o successiva.',
   'common.close': 'Chiudi',
   'common.cancel': 'Annulla',
   'window.tabNotice.title': 'Aperto in una scheda del browser',
   'window.tabNotice.dismiss': 'Non mostrare più',
-  'quit.done': 'calendariParrocchia è stato chiuso. Puoi chiudere questa finestra.',
+  'quit.done': 'calendariAutoImpaginazione è stato chiuso. Puoi chiudere questa finestra.',
   'error.network': 'Il programma non risponde: è ancora in esecuzione?',
   'error.title': 'Qualcosa è andato storto',
   'error.reload': 'Ricarica',

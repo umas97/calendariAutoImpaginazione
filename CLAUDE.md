@@ -1,4 +1,4 @@
-# calendariParrocchia
+# calendariAutoImpaginazione
 
 - **Fonte di verità:** [`docs/SPEC.md`](docs/SPEC.md). Se una scelta la contraddice, vince la SPEC;
   se la SPEC è ambigua, chiedi prima di inventare.
@@ -15,7 +15,7 @@
 uv run pytest -q
 uv run pytest -m bench tests/bench         # test 27, budget di §14 (a parte)
 uv run ruff check . && uv run ruff format --check .
-uv run calendariparrocchia --no-window       # server senza finestra
+uv run calendariautoimpaginazione --no-window       # server senza finestra
 cd frontend && npm run build        # scrive in backend/cp/static/
 ```
 

@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Dates and times as the program keeps them: wall-clock values without a time

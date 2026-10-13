@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Who may talk to the server.
 
@@ -30,7 +30,7 @@ LOOPBACK_NAMES = frozenset({"127.0.0.1", "localhost"})
 TOKEN_HEADER = "X-App-Token"
 
 BAD_HOST = "richiesta rifiutata: host non locale"
-BAD_ORIGIN = "richiesta rifiutata: proviene da una pagina che non è calendariParrocchia"
+BAD_ORIGIN = "richiesta rifiutata: proviene da una pagina che non è calendariAutoImpaginazione"
 BAD_TOKEN = "richiesta rifiutata: manca il token di sessione di questa finestra"
 
 

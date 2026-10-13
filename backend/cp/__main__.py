@@ -1,8 +1,8 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Command line entry point.
 
-``calendariparrocchia`` with no arguments starts the program *and its window*: it is what
+``calendariautoimpaginazione`` with no arguments starts the program *and its window*: it is what
 the menu entry runs. The project's own commands, when it has some, become
 subcommands here; the bare command must keep meaning "open the program".
 """

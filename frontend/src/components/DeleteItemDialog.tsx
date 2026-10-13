@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Deleting a group or a category (SPEC §6.3). Events linked to it lose the

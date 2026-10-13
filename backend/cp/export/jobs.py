@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Exports run in a thread, one at a time, with a state the interface can ask for (SPEC §8.7).
 

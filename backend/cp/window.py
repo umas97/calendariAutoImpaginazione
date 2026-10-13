@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The application window: a Chromium in ``--app`` mode.
 
@@ -137,7 +137,7 @@ def window_class(command: list[str] | None = None, url: str | None = None) -> st
     identity, and the dock would give all of them the icon of whichever menu
     entry claimed it first. Hence ``WINDOW_PATH``: the window opens there, the
     server redirects it to ``/``, and the identity stays ours. For Chrome:
-    ``chrome-127.0.0.1__calendariparrocchia-Default``.
+    ``chrome-127.0.0.1__calendariautoimpaginazione-Default``.
 
     install.sh writes this into ``StartupWMClass``; the window also gets it as
     ``--class`` so that an X11 session agrees.

@@ -1,8 +1,8 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Where the export goes (SPEC §9.1): the folder, "Sfoglia…" for the picker,
-// and the default (`~/Documenti/Calendari parrocchia/`, created by the first
+// and the default (`~/Documenti/calendariAutoImpaginazione/`, created by the first
 // export) one click away.
 import { useState } from 'react'
 import { t } from '../i18n/it'

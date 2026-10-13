@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // What makes the window installable: icons at 192 and 512, `display:
@@ -7,9 +7,9 @@
 import type { ManifestOptions } from 'vite-plugin-pwa'
 
 export const manifest: Partial<ManifestOptions> = {
-  id: '/?app=calendariparrocchia',
-  name: 'calendariParrocchia',
-  short_name: 'calendariParrocchia',
+  id: '/?app=calendariautoimpaginazione',
+  name: 'calendariAutoImpaginazione',
+  short_name: 'calendariAutoImpaginazione',
   description: 'Calendario dei gruppi parrocchiali con fogli A4 da distribuire',
   lang: 'it',
   start_url: '/',

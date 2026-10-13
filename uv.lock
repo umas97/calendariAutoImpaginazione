@@ -82,7 +82,7 @@ wheels = [
 ]
 
 [[package]]
-name = "calendariparrocchia"
+name = "calendariautoimpaginazione"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

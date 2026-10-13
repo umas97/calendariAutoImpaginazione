@@ -1,8 +1,8 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Starting the program, and stopping it.
 
-``__main__`` parses the command line; this is what the bare ``calendariparrocchia`` does.
+``__main__`` parses the command line; this is what the bare ``calendariautoimpaginazione`` does.
 The order is fixed and every step depends on the one before:
 
 1. take the lockfile -- which is also how a second launch finds the first and
@@ -33,7 +33,7 @@ import threading
 from typing import Any
 
 from . import single_instance
-from .config import APP_ID, APP_NAME, Settings, get_settings
+from .config import APP_ID, APP_NAME, LegacyRunning, Settings, get_settings
 from .controls import AppControls
 from .server import LocalServer
 
@@ -92,8 +92,14 @@ def _install_signal_handlers(stop: threading.Event) -> None:
 
 def run(args: argparse.Namespace) -> int:
     settings = get_settings()
-    settings.ensure_dirs()
+    try:
+        moved = settings.ensure_dirs()
+    except LegacyRunning as exc:
+        print(f"errore: {exc}", file=sys.stderr)
+        return 2
     configure_logging(settings, args.log_level)
+    for legacy, path in moved:
+        _log.info("cartella della versione precedente spostata: %s -> %s", legacy, path)
     port = args.port if args.port is not None else settings.port
     with_window = want_window(args)
 

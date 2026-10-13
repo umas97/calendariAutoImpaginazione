@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """File names and never overwriting: test 18 of SPEC §15 (§2.2, §8.6)."""
 
@@ -82,7 +82,7 @@ def test_failed_write_leaves_no_file(tmp_path, monkeypatch):
 
 def test_export_folder_is_always_new(tmp_path):
     when = dt.datetime(2026, 10, 13, 9, 5)
-    base = tmp_path / "Calendari parrocchia"
+    base = tmp_path / "calendariAutoImpaginazione"
     first = output.export_folder(base, when)
     second = output.export_folder(base, when)
     assert first.name == "Export 2026-10-13 09-05"

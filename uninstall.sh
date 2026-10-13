@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Removes what install.sh installed -- the command, the menu entry, the icons --
@@ -11,8 +11,8 @@
 # instead of turning a removal into one of the filesystem root.
 set -euo pipefail
 
-APP_ID="calendariparrocchia"
-APP_NAME="calendariParrocchia"
+APP_ID="calendariautoimpaginazione"
+APP_NAME="calendariAutoImpaginazione"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 LAUNCHER="$HOME/.local/bin/$APP_ID"

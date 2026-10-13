@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Installs calendariParrocchia for the current user, as a desktop application: the
+# Installs calendariAutoImpaginazione for the current user, as a desktop application: the
 # command in ~/.local/bin, the icons in the hicolor theme, the menu entry, whose
 # StartupWMClass is the identity the window ends up with -- which is what puts
 # the right icon and name in the dock.
@@ -16,8 +16,8 @@
 #   CP_INSTALL_SKIP_FRONTEND=1  do not build the interface (the build must exist)
 set -euo pipefail
 
-APP_ID="calendariparrocchia"
-APP_NAME="calendariParrocchia"
+APP_ID="calendariautoimpaginazione"
+APP_NAME="calendariAutoImpaginazione"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 BIN_DIR="$HOME/.local/bin"

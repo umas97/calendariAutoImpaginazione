@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """A :class:`Sheet` becomes HTML, then a WeasyPrint document, then PDF bytes (SPEC §8.3, §8.5).
 

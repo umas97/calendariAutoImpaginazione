@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Fitting, PDF and PNG: tests 14-16 of SPEC §15 (§8.4, §8.5).
 
@@ -158,7 +158,7 @@ def test_pdf_is_a4_with_inter_embedded_and_real_text(api):
     width, height = document[0].get_size()
     assert abs(width - 595) <= 1 and abs(height - 842) <= 1
     assert document.get_metadata_dict()["Title"] == sheet.title
-    assert document.get_metadata_dict()["Creator"] == "calendariParrocchia"
+    assert document.get_metadata_dict()["Creator"] == "calendariAutoImpaginazione"
     fonts = font_names(pdf)
     assert fonts and all(name.startswith("Inter") and embedded for name, embedded in fonts)
     text = text_of(pdf)

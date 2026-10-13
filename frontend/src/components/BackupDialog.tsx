@@ -1,8 +1,8 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // "Backup ora" (SPEC §10.4): a folder from the picker inside the program, a
-// name (`calendariParrocchia backup AAAA-MM-GG.db` by default), and the whole
+// name (`calendariAutoImpaginazione backup AAAA-MM-GG.db` by default), and the whole
 // database copied there. A name already taken becomes `… (2).db`: the server
 // never replaces a file. Then where it went, and "Apri cartella".
 import { useState } from 'react'

@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Backup and restore: tests 23 and 24 of SPEC §15 (§10.4)."""
 
@@ -100,7 +100,7 @@ def test_backup_refuses_folders_outside_home_or_missing(filled, xdg_home):
 
 def test_backup_options(api, xdg_home):
     options = api.get("/api/backup").json()
-    assert options["default_name"] == f"calendariParrocchia backup {dt.date.today()}.db"
+    assert options["default_name"] == f"calendariAutoImpaginazione backup {dt.date.today()}.db"
     assert options["default_folder"] == str(xdg_home)  # no ~/Documenti yet
     assert options["auto_dir"] == str(data_dir(xdg_home) / "backups")
     assert options["last_auto"] is None
@@ -172,6 +172,20 @@ def test_restore_refuses_another_sqlite_database(filled, xdg_home):
         db.execute("INSERT INTO setting VALUES ('app', '\"altraapp\"')")
     response = filled.post("/api/restore", json={"path": str(path)})
     assert response.json()["error"]["message"] == backup.NOT_OURS
+
+
+def test_restore_accepts_a_backup_made_under_the_old_name(filled, xdg_home):
+    before = snapshot(filled)
+    path = make_backup(filled, xdg_home / "Documenti")
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE setting SET value = '\"calendariparrocchia\"' WHERE key = 'app'")
+    filled.put("/api/settings/parish.name", json={"value": "Altro"})
+    response = filled.post("/api/restore", json={"path": path})
+    assert response.status_code == 200, response.text
+    assert snapshot(filled) == before
+    with sqlite3.connect(data_dir(xdg_home) / "catalog.db") as db:
+        stamp = db.execute("SELECT value FROM setting WHERE key = 'app'").fetchone()[0]
+    assert stamp == f'"{APP_ID}"'
 
 
 def test_restore_refuses_a_newer_schema(filled, xdg_home):

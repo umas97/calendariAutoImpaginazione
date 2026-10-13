@@ -1,10 +1,10 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The build writes straight into the Python package: in production there is no
 // second process, the server serves these files from the port that answers
 // /api. In development `npm run dev` proxies /api and /ws to a server started
-// with `CP_PORT=8746 uv run calendariparrocchia --no-window`, so the two setups
+// with `CP_PORT=8746 uv run calendariautoimpaginazione --no-window`, so the two setups
 // differ in who serves the HTML and in nothing else.
 //
 // The service worker is written by hand (src/pwa/sw.ts, `injectManifest`): what

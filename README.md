@@ -1,4 +1,4 @@
-# calendariParrocchia
+# calendariAutoImpaginazione
 
 Calendario dei gruppi parrocchiali con fogli A4 da distribuire.
 
@@ -35,9 +35,9 @@ davvero attraverso WeasyPrint), il font Inter incluso nel pacchetto — e se man
 comando esatto e si ferma: non installa mai pacchetti di sistema. Poi prepara l'ambiente Python con
 `uv`, costruisce l'interfaccia (se c'è npm) e installa:
 
-- il comando `~/.local/bin/calendariparrocchia`;
+- il comando `~/.local/bin/calendariautoimpaginazione`;
 - le icone in `~/.local/share/icons/hicolor/{48x48,128x128,256x256,scalable}/apps/`;
-- la voce di menu `~/.local/share/applications/calendariparrocchia.desktop`, il cui
+- la voce di menu `~/.local/share/applications/calendariautoimpaginazione.desktop`, il cui
   `StartupWMClass` è l'identità della finestra: è ciò che mette nella dock l'icona e il nome giusti.
 
 ### La finestra
@@ -53,8 +53,8 @@ intero.
 ## Uso
 
 ```sh
-calendariparrocchia                  # programma + finestra (è ciò che fa la voce di menu)
-calendariparrocchia --no-window      # solo il server: sviluppo, SSH, script
+calendariautoimpaginazione                  # programma + finestra (è ciò che fa la voce di menu)
+calendariautoimpaginazione --no-window      # solo il server: sviluppo, SSH, script
 ```
 
 Rilanciare il comando non apre una seconda istanza: chiede a quella in esecuzione di mostrare la
@@ -79,7 +79,7 @@ Il programma ha tre schede:
   colonne; se nemmeno così ci sta, il programma lo dice e propone «Esporta su più pagine».
 
 Gli export vanno in una sottocartella nuova, `Export AAAA-MM-GG HH-MM`, dentro la cartella scelta
-(di default `~/Documenti/Calendari parrocchia/`): **nessun file esistente viene mai sovrascritto**.
+(di default `~/Documenti/calendariAutoImpaginazione/`): **nessun file esistente viene mai sovrascritto**.
 
 ## I tuoi dati e i backup
 
@@ -88,15 +88,15 @@ database SQLite:
 
 | Cosa | Dove |
 |---|---|
-| Database | `~/.local/share/calendariparrocchia/catalog.db` |
-| Backup automatici | `~/.local/share/calendariparrocchia/backups/auto-AAAA-MM-GG.db` |
-| Log (3 file da 1 MB al massimo) | `~/.local/state/calendariparrocchia/logs/` |
+| Database | `~/.local/share/calendariautoimpaginazione/catalog.db` |
+| Backup automatici | `~/.local/share/calendariautoimpaginazione/backups/auto-AAAA-MM-GG.db` |
+| Log (3 file da 1 MB al massimo) | `~/.local/state/calendariautoimpaginazione/logs/` |
 
 Dal menu «⋯»:
 
 - **Backup ora** — una copia completa del database (fatta con `VACUUM INTO`, coerente anche a
   programma aperto) nella cartella che scegli, di default `~/Documenti`, col nome
-  `calendariParrocchia backup AAAA-MM-GG.db`. Se il nome è già preso il backup diventa
+  `calendariAutoImpaginazione backup AAAA-MM-GG.db`. Se il nome è già preso il backup diventa
   `… (2).db`: nessun file viene sostituito. Per spostare i dati su un altro computer basta questo
   file.
 - **Backup automatico** — all'avvio, se l'ultimo ha più di 24 ore. Si tengono gli ultimi **14**;
@@ -104,7 +104,7 @@ Dal menu «⋯»:
 - **Ripristina da backup…** — il selettore si apre sulla cartella dei backup automatici e mostra
   anche i file `.db` (si può andare ovunque nella cartella personale). Il programma legge il file
   scelto e mostra quanti eventi, gruppi e categorie contiene prima di chiedere conferma. Rifiuta un
-  file che non è un backup di calendariParrocchia, uno danneggiato e uno fatto da una versione più
+  file che non è un backup di calendariAutoImpaginazione, uno danneggiato e uno fatto da una versione più
   recente del programma; uno fatto da una versione più vecchia viene aggiornato. Il database di
   prima non viene cancellato: resta nella cartella dei dati come
   `catalog-prima-del-ripristino-AAAA-MM-GG-HHMMSS.db`. Il file scelto non viene mai modificato.
@@ -127,16 +127,16 @@ Servono `uv` e, per l'interfaccia, Node.js.
 
 ```sh
 uv sync                                   # dipendenze, incluse quelle di sviluppo
-uv run python packaging/make_icons.py     # icone segnaposto (già fatto dallo scaffold)
+uv run python packaging/make_icons.py     # ridisegna le icone (PNG e SVG, già nel repository)
 uv run pytest -q                          # test (~45 s: gli export compongono PDF veri)
 uv run ruff check . && uv run ruff format --check .
 cd frontend && npm run typecheck          # controllo dei tipi dell'interfaccia
 
 # interfaccia: server senza finestra su una porta fissa, Vite con il ricaricamento a caldo
-CP_PORT=8746 uv run calendariparrocchia --no-window
+CP_PORT=8746 uv run calendariautoimpaginazione --no-window
 # API esplorabili su http://127.0.0.1:8746/docs (solo con CP_DEV=1: Swagger UI carica il suo
 # script da una CDN, quindi nell'uso normale la pagina non esiste)
-CP_DEV=1 CP_PORT=8746 uv run calendariparrocchia --no-window
+CP_DEV=1 CP_PORT=8746 uv run calendariautoimpaginazione --no-window
 cd frontend && npm install && npm run dev  # http://localhost:5173
 npm run build                              # scrive in backend/cp/static/
 ```

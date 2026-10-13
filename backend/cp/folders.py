@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The folder picker inside the program, and the one rule about paths (SPEC §10.3; test 20).
 
@@ -25,7 +25,7 @@ _log = logging.getLogger(__name__)
 
 OUTSIDE = "Si possono usare solo cartelle dentro la tua cartella personale."
 #: Where exports go unless the user picks another folder (SPEC §9.1).
-DEFAULT_EXPORT_DIR = ("Documenti", "Calendari parrocchia")
+DEFAULT_EXPORT_DIR = ("Documenti", "calendariAutoImpaginazione")
 
 
 def home() -> Path:

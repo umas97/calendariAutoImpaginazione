@@ -1,4 +1,4 @@
-# calendariParrocchia — Specifica di implementazione
+# calendariAutoImpaginazione — Specifica di implementazione
 
 > **Destinatario:** agente di coding (Claude Code) che implementa il progetto.
 > **Lingua del codice/commenti:** inglese. **Lingua della UI e dei messaggi:** italiano.
@@ -9,7 +9,7 @@
 
 ## 1. Obiettivo
 
-calendariParrocchia è un programma desktop per Linux con cui **una sola persona** (chi coordina
+calendariAutoImpaginazione è un programma desktop per Linux con cui **una sola persona** (chi coordina
 le attività della parrocchia) tiene il calendario delle attività dei gruppi parrocchiali
 (classi di catechismo, cresimandi, giovanissimi, coro, oratorio…) e ne ricava **fogli A4
 pronti da distribuire**: un foglio per gruppo, con soltanto gli eventi che interessano a quel
@@ -151,7 +151,7 @@ vera (database, generazione PDF/PNG, file su disco).
 ## 5. Architettura
 
 ```
-calendariParrocchia/
+calendariAutoImpaginazione/
 ├── backend/cp/
 │   ├── __main__.py            # CLI: nudo = apri il programma (scaffold)
 │   ├── runtime.py             # avvio/chiusura, server + finestra (scaffold)
@@ -456,7 +456,7 @@ Verificati il 2026-10-13 con la riga compatta (test 14): 30 eventi in una colonn
 ### 8.5 PDF e PNG (test 15–17)
 
 - PDF: pagine A4 (595 × 842 pt ± 1), font incorporato, testo selezionabile, metadati
-  `Title` = titolo del foglio, `Creator` = calendariParrocchia.
+  `Title` = titolo del foglio, `Creator` = calendariAutoImpaginazione.
 - PNG: rasterizzazione del PDF con pypdfium2. A 150/200/300 dpi le dimensioni sono
   1240 × 1754, 1654 × 2339, 2480 × 3508 px (± 1). Sfondo bianco opaco (niente trasparenza:
   su WhatsApp lo sfondo trasparente diventa nero).
@@ -556,7 +556,7 @@ aggiungere in `window.py`); F11 = schermo intero.
   default**, con «Tutte / Nessuna». «Seleziona tutti i gruppi».
 - **Intestazione**: nome della parrocchia e logo (carica / rimuovi, con miniatura).
 - **Cartella**: percorso + **Sfoglia…** (selettore dentro l'app, §10.3), default
-  `~/Documenti/Calendari parrocchia/` (creata al primo export se non esiste).
+  `~/Documenti/calendariAutoImpaginazione/` (creata al primo export se non esiste).
 - **Esporta**: barra di avanzamento per fogli, poi riepilogo (file prodotti, gruppi saltati
   con il motivo) e **Apri cartella** (`gio open`, ripiego `xdg-open`).
 - **Anteprima**: le pagine di ogni foglio, navigabili per gruppo; per ciascuno un'etichetta
@@ -584,7 +584,7 @@ aggiungere in `window.py`); F11 = schermo intero.
 
 ### 10.1 Database
 
-- File `~/.local/share/calendariparrocchia/catalog.db` (SQLite). Pragma a ogni connessione:
+- File `~/.local/share/calendariautoimpaginazione/catalog.db` (SQLite). Pragma a ogni connessione:
   `journal_mode=WAL`, `synchronous=NORMAL`, `busy_timeout=15000`, `foreign_keys=ON`.
 - Sessioni brevi con `session_scope()` (commit o rollback). Mai una sessione aperta durante
   la composizione dei PDF: si leggono i dati, si chiude, poi si compone.
@@ -619,13 +619,14 @@ Il logo sta nella tabella `asset` (chiave `parish.logo`).
 ### 10.4 Backup e ripristino (`backup.py`, test 23–24)
 
 - **Backup ora**: `VACUUM INTO` (copia coerente anche a programma aperto) nel file scelto con
-  il selettore di cartelle; nome di default `calendariParrocchia backup AAAA-MM-GG.db`.
+  il selettore di cartelle; nome di default `calendariAutoImpaginazione backup AAAA-MM-GG.db`.
   Contiene tutto, logo compreso.
 - **Backup automatico**: all'avvio, se l'ultimo ha più di 24 ore, copia in
-  `~/.local/share/calendariparrocchia/backups/auto-AAAA-MM-GG.db`; si tengono gli ultimi
+  `~/.local/share/calendariautoimpaginazione/backups/auto-AAAA-MM-GG.db`; si tengono gli ultimi
   **14**.
 - **Ripristino**: si sceglie un file; il programma verifica che sia un database di questa app
-  (tabella `setting` con `app = calendariparrocchia`) con `schema_version` ≤ quella corrente
+  (tabella `setting` con `app = calendariautoimpaginazione`, o `calendariparrocchia`, il nome
+  precedente) con `schema_version` ≤ quella corrente
   (se è più vecchia, applica le migrazioni). Poi, sotto un lock che sospende le scritture:
   chiude il motore SQLAlchemy, sposta il database attuale in
   `catalog-prima-del-ripristino-AAAA-MM-GG-HHMMSS.db`, copia il backup, riapre, e
@@ -633,11 +634,14 @@ Il logo sta nella tabella `asset` (chiave `parish.logo`).
 
 ### 10.5 Cartelle
 
-- Dati: `~/.local/share/calendariparrocchia/` (database, backup automatici).
+- Dati: `~/.local/share/calendariautoimpaginazione/` (database, backup automatici).
 - Impostazioni del programma: nel database (§10.2).
-- Log: `~/.local/state/calendariparrocchia/logs/` (scaffold, 3 × 1 MB).
+- Log: `~/.local/state/calendariautoimpaginazione/logs/` (scaffold, 3 × 1 MB).
 - Export: dove sceglie l'utente, sotto `$HOME`.
 - Nessuna cache su disco: le anteprime vivono in memoria.
+- **Nome precedente** (`calendariparrocchia`, fino al 2026-10-13): al primo avvio le sue
+  cartelle dati e log diventano quelle nuove, se queste non esistono ancora; se la versione
+  precedente è ancora aperta il programma lo dice e si ferma, senza spostare nulla.
 
 ## 11. Server locale e finestra (garantiti dallo scaffold)
 

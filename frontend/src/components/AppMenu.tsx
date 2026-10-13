@@ -1,4 +1,4 @@
-// calendariParrocchia -- parish group calendars with printable A4 sheets
+// calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The "⋯" menu at the right of the bar (SPEC §9.1): the backups (§10.4),
@@ -101,6 +101,7 @@ function AboutDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog
       title={t('about.title')}
+      width="max-w-lg"
       onClose={onClose}
       footer={
         <button className={buttonClass.primary} onClick={onClose} autoFocus>
@@ -108,9 +109,18 @@ function AboutDialog({ onClose }: { onClose: () => void }) {
         </button>
       }
     >
-      <p className="text-base font-semibold text-ink-50">{t('app.name')}</p>
+      <div>
+        <p className="text-base font-semibold text-ink-50">{t('app.name')}</p>
+        {data ? <p className="text-ink-300">{t('about.version', { version: data.version })}</p> : null}
+      </div>
       <p className="text-ink-200">{t('app.description')}</p>
-      {data ? <p className="text-ink-300">{t('about.version', { version: data.version })}</p> : null}
+      <h3 className="pt-1 font-semibold text-ink-100">{t('about.features')}</h3>
+      <ul className="list-disc space-y-1.5 pl-5 text-ink-300">
+        <li>{t('about.feature.calendar')}</li>
+        <li>{t('about.feature.taxonomy')}</li>
+        <li>{t('about.feature.export')}</li>
+      </ul>
+      <h3 className="pt-1 font-semibold text-ink-100">{t('about.data')}</h3>
       <p className="text-ink-300">{t('about.offline')}</p>
       <p className="text-ink-300">{t('about.license')}</p>
     </Dialog>

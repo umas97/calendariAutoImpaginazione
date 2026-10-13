@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Parish name and logo: test 25 of SPEC §15 (§8.8). The logo in the PDF: test_export_jobs."""
 

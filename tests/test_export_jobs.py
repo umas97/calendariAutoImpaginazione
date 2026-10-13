@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The three modes, the job, the API and the network ban: tests 17 and 19 of SPEC §15."""
 
@@ -47,7 +47,7 @@ def export(data, xdg_home, mode="per_group", formats=("pdf",), **extra):
         "formats": list(formats),
         "dpi": 150,
         "selections": [{"group_id": g, "category_ids": categories} for g in groups],
-        "output_dir": str(xdg_home / "Documenti" / "Calendari parrocchia"),
+        "output_dir": str(xdg_home / "Documenti" / "calendariAutoImpaginazione"),
     } | extra
     return jobs.run_export(ExportRequest.model_validate(body))
 
@@ -66,7 +66,7 @@ def text(path: Path) -> str:
 def test_per_group_one_file_per_group_and_the_empty_one_skipped(data, xdg_home):
     job = export(data, xdg_home, formats=("pdf", "png"))
     assert job.status == "done" and (job.done, job.total) == (3, 3)
-    assert job.folder.parent == xdg_home / "Documenti" / "Calendari parrocchia"
+    assert job.folder.parent == xdg_home / "Documenti" / "calendariAutoImpaginazione"
     assert job.folder.name.startswith("Export ")
     assert sorted(job.files) == sorted(
         [
@@ -240,7 +240,7 @@ def test_api_counts_and_options(api, data):
         "next_3_months",
         "pastoral_year",
     }
-    assert options["default_dir"].endswith("Documenti/Calendari parrocchia")
+    assert options["default_dir"].endswith("Documenti/calendariAutoImpaginazione")
     assert options["default_dir"].startswith(options["home"])
 
 

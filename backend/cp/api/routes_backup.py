@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """``/api/backup`` and ``/api/restore``: the backup entries of the «⋯» menu (SPEC §10.4)."""
 
@@ -17,7 +17,7 @@ router = APIRouter(tags=["backup"])
 
 class BackupIn(BaseModel):
     folder: str
-    #: Empty: ``calendariParrocchia backup AAAA-MM-GG.db``.
+    #: Empty: ``calendariAutoImpaginazione backup AAAA-MM-GG.db``.
     name: str = ""
 
 

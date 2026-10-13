@@ -1,4 +1,4 @@
-# calendariParrocchia -- parish group calendars with printable A4 sheets
+# calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The local server: its base API, who may talk to it, and the interface it serves."""
 
@@ -94,7 +94,7 @@ def test_paths_cannot_escape_the_interface_folder(live):
 
 
 def test_the_window_path_leads_to_the_interface(live):
-    """The window opens at /calendariparrocchia for its dock identity, then lands on /."""
+    """The window opens at /calendariautoimpaginazione for its dock identity, then lands on /."""
     status, headers, _ = live.request("GET", f"/{APP_ID}")
     assert status == 307
     assert headers["location"] == "/"
