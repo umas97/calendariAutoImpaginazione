@@ -55,7 +55,8 @@ export type WindowInfo = {
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
-  if (init.body !== undefined && !headers.has('Content-Type')) {
+  // A FormData body (the logo) sets its own multipart type.
+  if (init.body !== undefined && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
   let response: Response
@@ -118,10 +119,93 @@ export type CalendarView = 'month' | 'week' | 'list'
 /** `null` means every group (or category), including the ones created later. */
 export type CalendarFilters = { group_ids: number[] | null; category_ids: number[] | null }
 
+export type ExportMode = 'per_group' | 'single_pdf' | 'combined'
+export type ExportFormat = 'pdf' | 'png'
+export type Dpi = 150 | 200 | 300
+export type Period = { from: string; to: string }
+export type GroupSelection = { group_id: number; category_ids: number[] }
+
+/** The contract of every export, preview and count (SPEC §8.1). */
+export type ExportRequest = {
+  period: Period
+  mode: ExportMode
+  formats: ExportFormat[]
+  dpi: Dpi
+  selections: GroupSelection[]
+  output_dir?: string | null
+  /** Groups laid out over several pages instead of one sheet ("Esporta su più pagine"). */
+  multipage?: number[]
+}
+
+/** The last choices of the Export tab; `category_ids: null` means every category. */
+export type ExportLast = {
+  period: Period | null
+  mode: ExportMode
+  formats: ExportFormat[]
+  dpi: Dpi
+  selections: { group_id: number; category_ids: number[] | null }[]
+  /** `null`: the default folder. */
+  output_dir: string | null
+}
+
+export type ShortcutKey = 'this_month' | 'next_month' | 'next_3_months' | 'pastoral_year'
+
+export type ExportOptions = {
+  shortcuts: Record<ShortcutKey, Period>
+  default_dir: string
+  home: string
+  busy: boolean
+}
+
+export type ExportCounts = { groups: Record<string, number>; combined: number }
+
+export type SheetLayout = { columns: number; font_pt: number; multipage: boolean }
+
+export type PreviewSheet = {
+  group_id: number | null
+  title: string
+  event_count: number
+  layout: SheetLayout | null
+  fits: boolean
+  /** Image URLs, valid until the next preview request. */
+  pages: string[]
+}
+
+export type SkippedSheet = {
+  group_id: number | null
+  group: string
+  reason: 'empty' | 'too_big' | 'error'
+  message: string
+  events: number
+}
+
+export type ExportJob = {
+  id: string
+  status: 'running' | 'done' | 'failed' | 'cancelled'
+  total: number
+  done: number
+  folder: string | null
+  files: string[]
+  skipped: SkippedSheet[]
+  message: string | null
+}
+
+export type Parish = {
+  name: string
+  logo: { mime: string; bytes: number; updated_at: string } | null
+}
+
+export type FolderListing = {
+  path: string
+  parent: string | null
+  home: string
+  folders: { name: string; path: string }[]
+}
+
 export type Settings = {
   'calendar.view': CalendarView
   'calendar.filters': CalendarFilters
-  'export.last': unknown
+  'export.last': ExportLast | null
   'parish.name': string
 }
 
@@ -168,4 +252,32 @@ export const api = {
   settings: () => request<Settings>('/api/settings'),
   putSetting: <K extends keyof Settings>(key: K, value: Settings[K]) =>
     request<{ key: K; value: Settings[K] }>(`/api/settings/${key}`, { method: 'PUT', body: json({ value }) }),
+
+  parish: () => request<Parish>('/api/parish'),
+  setParishName: (name: string) => request<Parish>('/api/parish', { method: 'PUT', body: json({ name }) }),
+  uploadLogo: (file: File) => {
+    const body = new FormData()
+    body.append('logo', file)
+    return request<Parish>('/api/parish/logo', { method: 'POST', body })
+  },
+  removeLogo: () => request<void>('/api/parish/logo', { method: 'DELETE' }),
+
+  folders: (path: string, hidden: boolean) =>
+    request<FolderListing>(`/api/folders?${new URLSearchParams({ path, hidden: hidden ? '1' : '0' })}`),
+  createFolder: (path: string, name: string) =>
+    request<{ path: string }>('/api/folders', { method: 'POST', body: json({ path, name }) }),
+  openFolder: (path: string) =>
+    request<{ path: string }>('/api/folders/open', { method: 'POST', body: json({ path }) }),
+
+  exportOptions: () => request<ExportOptions>('/api/export/options'),
+  exportCounts: (body: ExportRequest & { included: number[] }) =>
+    request<ExportCounts>('/api/export/counts', { method: 'POST', body: json(body) }),
+  preview: (body: ExportRequest) =>
+    request<{ generation: number; sheets: PreviewSheet[] }>('/api/export/preview', {
+      method: 'POST',
+      body: json(body),
+    }),
+  startExport: (body: ExportRequest) =>
+    request<ExportJob>('/api/export', { method: 'POST', body: json(body) }),
+  exportJob: (id: string) => request<ExportJob>(`/api/export/jobs/${id}`),
 }

@@ -6,6 +6,7 @@
 // paths: screen, then element. Each screen has its own file (it.taxonomy.ts,
 // ...), spread in here; what the whole program shares stays in this one.
 import { itCalendar } from './it.calendar'
+import { itExport } from './it.export'
 import { itTaxonomy } from './it.taxonomy'
 
 export const it = {
@@ -29,7 +30,6 @@ export const it = {
   'about.license': 'Software libero, distribuito con licenza GPL-3.0 o successiva.',
   'common.close': 'Chiudi',
   'common.cancel': 'Annulla',
-  'export.soon': 'Qui si prepareranno i fogli da stampare: arriva con la Fase 5.',
   'window.tabNotice.title': 'Aperto in una scheda del browser',
   'window.tabNotice.dismiss': 'Non mostrare più',
   'quit.done': 'calendariParrocchia è stato chiuso. Puoi chiudere questa finestra.',
@@ -38,6 +38,7 @@ export const it = {
   'error.reload': 'Ricarica',
   ...itCalendar,
   ...itTaxonomy,
+  ...itExport,
 } as const
 
 export type MessageKey = keyof typeof it

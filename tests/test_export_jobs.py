@@ -241,6 +241,36 @@ def test_api_counts_and_options(api, data):
         "pastoral_year",
     }
     assert options["default_dir"].endswith("Documenti/Calendari parrocchia")
+    assert options["default_dir"].startswith(options["home"])
+
+
+def test_api_counts_for_unticked_groups_and_no_categories(api, data):
+    groups, categories = data
+    response = api.post(
+        "/api/export/counts",
+        json={
+            "period": {"from": FIRST.isoformat(), "to": LAST.isoformat()},
+            "selections": [
+                {"group_id": groups[0], "category_ids": categories},
+                {"group_id": groups[1], "category_ids": categories},
+                {"group_id": groups[2], "category_ids": []},
+            ],
+            "included": [groups[0]],
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {
+        "groups": {str(groups[0]): 4, str(groups[1]): 6, str(groups[2]): 0},
+        "combined": 4,
+    }
+    nothing = api.post(
+        "/api/export/counts",
+        json={
+            "period": {"from": FIRST.isoformat(), "to": LAST.isoformat()},
+            "selections": [{"group_id": groups[0], "category_ids": []}],
+        },
+    )
+    assert nothing.json() == {"groups": {str(groups[0]): 0}, "combined": 0}
 
 
 def test_api_preview(api, data):

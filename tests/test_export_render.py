@@ -20,7 +20,7 @@ from PIL import Image
 
 from cp.db.session import session_scope
 from cp.export import samples
-from cp.export.autofit import PHASES, fit_sheet
+from cp.export.autofit import PHASES, LayoutMemory, fit_sheet
 from cp.export.raster import page_count, png_pages
 from cp.export.render import MULTIPAGE, Layout, compose, pdf_bytes
 from cp.export.request import ExportRequest, check_request
@@ -99,6 +99,31 @@ def test_binary_search_finds_the_most_readable_layout(limit):
     else:
         assert (fitted.layout.columns, fitted.layout.font_pt) == order[limit]
     assert len(calls) <= 7
+
+
+def test_layout_memory_spares_the_search():
+    """What the preview found, the export reuses: one composition, none for a misfit."""
+    memory = LayoutMemory()
+    calls = []
+
+    def composer(sheet, layout: Layout):
+        calls.append(layout)
+        return SimpleNamespace(pages=[1] if layout.columns == 2 or sheet == "small" else [1, 2])
+
+    first = fit_sheet("big", composer, memory)  # type: ignore[arg-type]
+    searched = len(calls)
+    again = fit_sheet("big", composer, memory)  # type: ignore[arg-type]
+    assert again.layout == first.layout and again.attempts == 1
+    assert len(calls) == searched + 1
+
+    def overflowing(_sheet, layout):
+        calls.append(layout)
+        return SimpleNamespace(pages=[1, 2])
+
+    assert fit_sheet("huge", overflowing, memory) is None  # type: ignore[arg-type]
+    before = len(calls)
+    assert fit_sheet("huge", overflowing, memory) is None  # type: ignore[arg-type]
+    assert len(calls) == before
 
 
 def test_one_event_fits_at_the_largest_size(api):

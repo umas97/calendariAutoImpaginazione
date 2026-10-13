@@ -7,10 +7,16 @@ first that fits on one page wins: one column from 11 pt down to 8.5 pt, then
 two columns from 9.5 pt down to 7.5 pt, in steps of 0.5 pt. Within a phase the
 page count only grows with the size, so a binary search finds the largest size
 that fits with at most three compositions; seven in all at worst.
+
+A :class:`LayoutMemory` remembers what the search found for recent sheets.
+The preview and the export share one, so exporting what was just previewed
+costs one composition per sheet, and none for a sheet known not to fit.
 """
 
 from __future__ import annotations
 
+import threading
+from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -66,12 +72,60 @@ def _largest_fitting(
     return Fitted(Layout(columns, sizes[low]), found[low], attempts), attempts
 
 
-def fit_sheet(sheet: Sheet, composer: Composer = compose) -> Fitted | None:
+#: What a :class:`LayoutMemory` holds for a sheet that fits no layout.
+NO_FIT = "no fit"
+
+
+class LayoutMemory:
+    """The layouts found for the latest sheets.
+
+    A sheet carries every text and colour it shows, so an equal sheet lays out
+    the same way: the search need not run again.
+    """
+
+    def __init__(self, size: int = 64) -> None:
+        self._lock = threading.Lock()
+        self._size = size
+        self._known: OrderedDict[Sheet, Layout | str] = OrderedDict()
+
+    def get(self, sheet: Sheet) -> Layout | str | None:
+        with self._lock:
+            known = self._known.get(sheet)
+            if known is not None:
+                self._known.move_to_end(sheet)
+            return known
+
+    def put(self, sheet: Sheet, layout: Layout | str) -> None:
+        with self._lock:
+            self._known[sheet] = layout
+            self._known.move_to_end(sheet)
+            while len(self._known) > self._size:
+                self._known.popitem(last=False)
+
+
+#: Shared by the preview and the export.
+layouts = LayoutMemory()
+
+
+def fit_sheet(
+    sheet: Sheet, composer: Composer = compose, memory: LayoutMemory | None = None
+) -> Fitted | None:
     """The most readable one-page layout of ``sheet``, or ``None`` if none exists."""
+    known = memory.get(sheet) if memory is not None else None
+    if known == NO_FIT:
+        return None
+    if isinstance(known, Layout):
+        document = composer(sheet, known)
+        if len(document.pages) == 1:
+            return Fitted(known, document, 1)
     attempts = 0
     for columns, sizes in PHASES:
         fitted, spent = _largest_fitting(sheet, columns, sizes, composer)
         attempts += spent
         if fitted is not None:
+            if memory is not None:
+                memory.put(sheet, fitted.layout)
             return Fitted(fitted.layout, fitted.document, attempts)
+    if memory is not None:
+        memory.put(sheet, NO_FIT)
     return None

@@ -13,7 +13,7 @@ import threading
 from typing import Any
 
 from ..domain.errors import Conflict, NotFound
-from .autofit import fit_sheet
+from .autofit import fit_sheet, layouts
 from .raster import png_pages
 from .render import MULTIPAGE, Layout, compose, pdf_bytes
 from .request import ExportRequest, check_request
@@ -95,7 +95,7 @@ class PreviewStore:
         if sheet.multipage:
             document, layout = composer(sheet, MULTIPAGE), MULTIPAGE
         else:
-            fitted = fit_sheet(sheet, composer)
+            fitted = fit_sheet(sheet, composer, layouts)
             if fitted is None:
                 item["fits"] = False
                 return item

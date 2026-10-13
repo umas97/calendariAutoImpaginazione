@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/export", tags=["export"])
 
 @router.get("/options")
 def options() -> dict[str, Any]:
-    """The period shortcuts for today and the default folder; readies the PDF engine."""
+    """The period shortcuts for today, the home and the default folder; readies the PDF engine."""
     render.warm_up()
     shortcuts = formatting.period_shortcuts(dt.date.today())
     return {
@@ -34,14 +34,20 @@ def options() -> dict[str, Any]:
             for key, (first, last) in shortcuts.items()
         },
         "default_dir": str(folders.default_export_dir()),
+        "home": str(folders.home()),
         "busy": runner.busy(),
     }
 
 
+class CountsRequest(ExportRequest):
+    #: The ticked groups: the complete calendar counts only these (default: all).
+    included: list[int] | None = None
+
+
 @router.post("/counts")
-def counts(body: ExportRequest) -> dict[str, Any]:
-    """Events per selected group, and in the complete calendar, for the period."""
-    return event_counts(check_request(body, needs_output=False))
+def counts(body: CountsRequest) -> dict[str, Any]:
+    """Events per group, ticked or not, and in the complete calendar, for the period."""
+    return event_counts(check_request(body, needs_output=False), body.included)
 
 
 @router.post("/preview")

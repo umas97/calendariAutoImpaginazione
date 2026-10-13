@@ -1,0 +1,186 @@
+// calendariParrocchia -- parish group calendars with printable A4 sheets
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// The folder picker inside the program (SPEC §10.3): only folders, only inside
+// the home -- the server refuses anything else. A click opens a folder; the
+// button at the bottom chooses the one open. A folder that does not exist yet
+// (the default one before the first export) opens on its nearest parent.
+import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { api, ApiError } from '../lib/api'
+import { t } from '../i18n/it'
+import { buttonClass, Dialog } from './Dialog'
+
+type Props = {
+  initial: string
+  home: string
+  onChoose: (path: string) => void
+  onClose: () => void
+}
+
+/** `~/Documenti/…` for a path in the home. */
+export function tildePath(path: string, home: string): string {
+  if (path === home) return '~'
+  return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path
+}
+
+const parentOf = (path: string) => path.replace(/\/[^/]+\/?$/, '') || '/'
+
+export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
+  const [path, setPath] = useState(initial)
+  const [hidden, setHidden] = useState(false)
+  const [newName, setNewName] = useState<string | null>(null)
+  const [newError, setNewError] = useState<string | null>(null)
+  const listing = useQuery({
+    queryKey: ['folders', path, hidden],
+    queryFn: () => api.folders(path, hidden),
+    retry: false,
+    staleTime: 0,
+  })
+
+  // Not there (yet): one level up, until something exists -- the home always does.
+  const error = listing.error as ApiError | null
+  useEffect(() => {
+    if (error?.status === 404 && path !== home && path.startsWith(home)) setPath(parentOf(path))
+  }, [error, path, home])
+
+  const create = async () => {
+    const name = (newName ?? '').trim()
+    if (!name || !listing.data) return
+    try {
+      const made = await api.createFolder(listing.data.path, name)
+      setNewName(null)
+      setNewError(null)
+      setPath(made.path)
+    } catch (err) {
+      setNewError((err as Error).message)
+    }
+  }
+
+  const current = listing.data
+  return (
+    <Dialog
+      title={t('folders.title')}
+      onClose={onClose}
+      width="max-w-xl"
+      footer={
+        <>
+          <button className={buttonClass.secondary} onClick={onClose}>
+            {t('common.cancel')}
+          </button>
+          <button className={buttonClass.primary} disabled={!current} onClick={() => current && onChoose(current.path)}>
+            {t('folders.choose')}
+          </button>
+        </>
+      }
+    >
+      <div className="flex items-center gap-1">
+        <IconButton label={t('folders.up')} disabled={!current?.parent} onClick={() => current?.parent && setPath(current.parent)}>
+          ↑
+        </IconButton>
+        <IconButton label={t('folders.home')} onClick={() => setPath(home)}>
+          ⌂
+        </IconButton>
+        <p className="min-w-0 flex-1 truncate rounded bg-ink-900 px-2 py-1 font-mono text-xs text-ink-100" title={current?.path}>
+          {current ? tildePath(current.path, home) : '…'}
+        </p>
+      </div>
+      <div className="h-72 overflow-y-auto rounded border border-ink-700">
+        {listing.isLoading ? (
+          <p className="p-3 text-ink-300">{t('folders.loading')}</p>
+        ) : error && error.status !== 404 ? (
+          <p className="p-3 text-red-400">{error.message}</p>
+        ) : current && current.folders.length === 0 ? (
+          <p className="p-3 text-ink-300">{t('folders.empty')}</p>
+        ) : (
+          <ul>
+            {current?.folders.map((folder) => (
+              <li key={folder.path}>
+                <button
+                  type="button"
+                  onClick={() => setPath(folder.path)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-ink-700"
+                >
+                  <span aria-hidden className="text-ink-300">
+                    ▸
+                  </span>
+                  <span className="truncate">{folder.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        {newName === null ? (
+          <button type="button" className="rounded px-1 text-accent hover:bg-ink-700" onClick={() => setNewName('')}>
+            + {t('folders.new')}
+          </button>
+        ) : (
+          <NewFolderInput
+            value={newName}
+            onChange={setNewName}
+            onSubmit={() => void create()}
+            onCancel={() => {
+              setNewName(null)
+              setNewError(null)
+            }}
+          />
+        )}
+        <label className="ml-auto flex cursor-pointer items-center gap-2 text-ink-200">
+          <input
+            type="checkbox"
+            checked={hidden}
+            onChange={(event) => setHidden(event.target.checked)}
+            className="h-4 w-4 accent-[var(--color-accent)]"
+          />
+          {t('folders.hidden')}
+        </label>
+      </div>
+      {newError ? <p className="text-red-400">{newError}</p> : null}
+    </Dialog>
+  )
+}
+
+type InputProps = { value: string; onChange: (v: string) => void; onSubmit: () => void; onCancel: () => void }
+
+function NewFolderInput({ value, onChange, onSubmit, onCancel }: InputProps) {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => ref.current?.focus(), [])
+  return (
+    <input
+      ref={ref}
+      value={value}
+      aria-label={t('folders.new')}
+      placeholder={t('folders.newPlaceholder')}
+      onChange={(event) => onChange(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') onSubmit()
+        if (event.key === 'Escape') {
+          // Close the field, not the dialog.
+          event.preventDefault()
+          event.stopPropagation()
+          onCancel()
+        }
+      }}
+      className="w-64 rounded border border-ink-600 bg-ink-900 px-2 py-1 text-sm"
+    />
+  )
+}
+
+type IconProps = { label: string; onClick: () => void; disabled?: boolean; children: string }
+
+function IconButton({ label, onClick, disabled, children }: IconProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded px-2 py-0.5 text-base text-ink-200 hover:bg-ink-700 disabled:opacity-40"
+    >
+      {children}
+    </button>
+  )
+}

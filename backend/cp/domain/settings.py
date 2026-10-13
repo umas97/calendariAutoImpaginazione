@@ -45,7 +45,8 @@ class Period(_Strict):
 
 class GroupSelection(_Strict):
     group_id: int
-    category_ids: list[int]
+    #: ``None`` means every category, including the ones created later.
+    category_ids: list[int] | None = None
 
 
 class ExportLast(_Strict):
@@ -133,7 +134,12 @@ def _sanitize(session: Session, key: str, value: Any) -> Any:
             value["category_ids"] = [i for i in value["category_ids"] if i in categories]
     else:
         value["selections"] = [
-            {**s, "category_ids": [i for i in s["category_ids"] if i in categories]}
+            {
+                **s,
+                "category_ids": None
+                if s.get("category_ids") is None
+                else [i for i in s["category_ids"] if i in categories],
+            }
             for s in value.get("selections", [])
             if s["group_id"] in groups
         ]

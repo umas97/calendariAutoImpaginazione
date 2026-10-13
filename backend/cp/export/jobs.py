@@ -22,7 +22,7 @@ from typing import Any, Literal
 from ..domain.errors import Conflict, NotFound
 from ..folders import inside_home
 from . import output
-from .autofit import fit_sheet
+from .autofit import fit_sheet, layouts
 from .raster import png_pages
 from .render import MULTIPAGE, Layout, compose, pdf_bytes
 from .request import ExportRequest, check_request
@@ -102,7 +102,7 @@ def lay_out(sheet: Sheet) -> tuple[Any, Layout] | None:
     """The sheet's document and layout; ``None`` if it does not fit one page."""
     if sheet.multipage:
         return compose(sheet, MULTIPAGE), MULTIPAGE
-    fitted = fit_sheet(sheet)
+    fitted = fit_sheet(sheet, memory=layouts)
     if fitted is None:
         return None
     _log.info(

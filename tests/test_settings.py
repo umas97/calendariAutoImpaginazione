@@ -51,6 +51,21 @@ def test_export_last_round_trip(api):
     assert api.get("/api/settings").json()["export.last"] == value
 
 
+def test_export_last_all_categories_is_null(api):
+    """``null`` = every category, also those created later (like the calendar filters)."""
+    group = api.group()
+    value = {
+        "period": None,
+        "mode": "per_group",
+        "formats": ["pdf"],
+        "dpi": 200,
+        "selections": [{"group_id": group, "category_ids": None}],
+        "output_dir": None,
+    }
+    assert api.put("/api/settings/export.last", json={"value": value}).status_code == 200
+    assert api.get("/api/settings").json()["export.last"] == value
+
+
 def test_unknown_key_is_404(api):
     response = api.put("/api/settings/window.size", json={"value": 3})
     assert response.status_code == 404

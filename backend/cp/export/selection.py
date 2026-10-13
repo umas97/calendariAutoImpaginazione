@@ -283,14 +283,32 @@ def _combined_sheet(
     )
 
 
-def event_counts(request: ExportRequest, *, session: Session | None = None) -> dict[str, object]:
-    """How many events each sheet would have: the numbers next to the groups (SPEC §9.1)."""
+def event_counts(
+    request: ExportRequest,
+    included: Sequence[int] | None = None,
+    *,
+    session: Session | None = None,
+) -> dict[str, object]:
+    """How many events each sheet would have: the numbers next to the groups (SPEC §9.1).
+
+    Every group in the request gets its number, so the screen can show it next
+    to groups not ticked yet; a group with no category chosen has none. The
+    complete calendar counts only the ``included`` groups (all when ``None``).
+    """
     if session is None:
         with session_scope() as own:
-            return event_counts(request, session=own)
-    per_group = build_sheets(request.model_copy(update={"mode": "per_group"}), session=session)
-    combined = build_sheets(request.model_copy(update={"mode": "combined"}), session=session)
-    return {
-        "groups": {sheet.group_id: sheet.event_count for sheet in per_group},
-        "combined": combined[0].event_count,
-    }
+            return event_counts(request, included, session=own)
+    chosen = [s for s in request.selections if s.category_ids]
+    counts = {s.group_id: 0 for s in request.selections}
+    if chosen:
+        per_group = request.model_copy(update={"mode": "per_group", "selections": chosen})
+        counts |= {
+            sheet.group_id: sheet.event_count for sheet in build_sheets(per_group, session=session)
+        }
+    wanted = set(included) if included is not None else None
+    in_combined = [s for s in chosen if wanted is None or s.group_id in wanted]
+    combined = 0
+    if in_combined:
+        whole = request.model_copy(update={"mode": "combined", "selections": in_combined})
+        combined = build_sheets(whole, session=session)[0].event_count
+    return {"groups": counts, "combined": combined}
