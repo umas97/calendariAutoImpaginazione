@@ -195,11 +195,34 @@ export type Parish = {
   logo: { mime: string; bytes: number; updated_at: string } | null
 }
 
+export type FileEntry = { name: string; path: string; size: number; modified: string }
+
 export type FolderListing = {
   path: string
   parent: string | null
   home: string
   folders: { name: string; path: string }[]
+  /** Only when asked for (`files: 'db'`): the backups in the folder, newest first. */
+  files?: FileEntry[]
+}
+
+export type BackupOptions = {
+  default_name: string
+  default_folder: string
+  /** Where the automatic backups are (SPEC §10.4). */
+  auto_dir: string
+  last_auto: string | null
+  home: string
+}
+
+/** What a backup holds: read before restoring it, to ask for confirmation. */
+export type BackupInfo = {
+  path: string
+  modified: string
+  schema_version: number
+  events: number
+  groups: number
+  categories: number
 }
 
 export type Settings = {
@@ -262,8 +285,10 @@ export const api = {
   },
   removeLogo: () => request<void>('/api/parish/logo', { method: 'DELETE' }),
 
-  folders: (path: string, hidden: boolean) =>
-    request<FolderListing>(`/api/folders?${new URLSearchParams({ path, hidden: hidden ? '1' : '0' })}`),
+  folders: (path: string, hidden: boolean, files?: 'db') =>
+    request<FolderListing>(
+      `/api/folders?${new URLSearchParams({ path, hidden: hidden ? '1' : '0', ...(files ? { files } : {}) })}`,
+    ),
   createFolder: (path: string, name: string) =>
     request<{ path: string }>('/api/folders', { method: 'POST', body: json({ path, name }) }),
   openFolder: (path: string) =>
@@ -280,4 +305,13 @@ export const api = {
   startExport: (body: ExportRequest) =>
     request<ExportJob>('/api/export', { method: 'POST', body: json(body) }),
   exportJob: (id: string) => request<ExportJob>(`/api/export/jobs/${id}`),
+
+  backupOptions: () => request<BackupOptions>('/api/backup'),
+  backupNow: (folder: string, name: string) =>
+    request<{ path: string }>('/api/backup', { method: 'POST', body: json({ folder, name }) }),
+  openBackups: () => request<{ path: string }>('/api/backup/open', { method: 'POST' }),
+  inspectBackup: (path: string) =>
+    request<BackupInfo>('/api/restore/inspect', { method: 'POST', body: json({ path }) }),
+  restore: (path: string) =>
+    request<{ aside: string }>('/api/restore', { method: 'POST', body: json({ path }) }),
 }

@@ -82,3 +82,25 @@ def test_open_folder(api, tree, monkeypatch):
     assert launched == [["gio", "open", str(tree / "Documenti")]]
     assert api.post("/api/folders/open", json={"path": "/etc"}).status_code == 403
     assert api.post("/api/folders/open", json={"path": str(tree / "manca")}).status_code == 404
+
+
+def test_db_files_only_on_request_newest_first(api, tree):
+    documents = tree / "Documenti"
+    (documents / "vecchio.db").write_bytes(b"a")
+    (documents / "NUOVO.DB").write_bytes(b"bb")
+    import os
+
+    os.utime(documents / "vecchio.db", (1_700_000_000, 1_700_000_000))
+    (tree / "fuori.db").symlink_to("/etc/hostname")
+    plain = api.get("/api/folders", params={"path": str(documents)}).json()
+    assert "files" not in plain
+    listing = api.get("/api/folders", params={"path": str(documents), "files": "db"}).json()
+    assert [(f["name"], f["size"]) for f in listing["files"]] == [
+        ("NUOVO.DB", 2),
+        ("vecchio.db", 1),
+    ]
+    assert listing["files"][1]["modified"].startswith("2023-11-14T")
+    # A link to a file outside the home is not offered; neither is any other suffix.
+    home = api.get("/api/folders", params={"path": str(tree), "files": "db"}).json()
+    assert home["files"] == []
+    assert api.get("/api/folders", params={"files": "txt"}).status_code == 422

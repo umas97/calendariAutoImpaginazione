@@ -1,15 +1,16 @@
 // calendariParrocchia -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// The "⋯" menu at the right of the bar (SPEC §9.1). The backup entries are
-// shown but disabled until Phase 6 brings them: the menu already has its final
-// shape, and nothing in it pretends to work.
+// The "⋯" menu at the right of the bar (SPEC §9.1): the backups (§10.4),
+// "Informazioni" and "Esci".
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { t } from '../i18n/it'
+import { BackupDialog } from './BackupDialog'
 import { buttonClass, Dialog } from './Dialog'
 import { MenuItem, Popover } from './Popover'
+import { Message, RestoreDialog } from './RestoreDialog'
 
 type Props = {
   /** `null` when this server cannot stop itself: then there is no "Esci". */
@@ -17,8 +18,18 @@ type Props = {
   quitting: boolean
 }
 
+type Open = 'about' | 'backup' | 'restore' | { error: string } | null
+
 export function AppMenu({ onQuit, quitting }: Props) {
-  const [about, setAbout] = useState(false)
+  const [open, setOpen] = useState<Open>(null)
+  const closeDialog = () => setOpen(null)
+  const openBackups = async () => {
+    try {
+      await api.openBackups()
+    } catch (err) {
+      setOpen({ error: (err as Error).message })
+    }
+  }
   return (
     <>
       <Popover
@@ -28,20 +39,35 @@ export function AppMenu({ onQuit, quitting }: Props) {
       >
         {(close) => (
           <>
-            <MenuItem disabled title={t('menu.soon')} onClick={close}>
+            <MenuItem
+              onClick={() => {
+                close()
+                setOpen('backup')
+              }}
+            >
               {t('menu.backup')}
             </MenuItem>
-            <MenuItem disabled title={t('menu.soon')} onClick={close}>
+            <MenuItem
+              onClick={() => {
+                close()
+                setOpen('restore')
+              }}
+            >
               {t('menu.restore')}
             </MenuItem>
-            <MenuItem disabled title={t('menu.soon')} onClick={close}>
+            <MenuItem
+              onClick={() => {
+                close()
+                void openBackups()
+              }}
+            >
               {t('menu.backupFolder')}
             </MenuItem>
             <div className="my-1 border-t border-ink-600" />
             <MenuItem
               onClick={() => {
                 close()
-                setAbout(true)
+                setOpen('about')
               }}
             >
               {t('menu.about')}
@@ -60,7 +86,12 @@ export function AppMenu({ onQuit, quitting }: Props) {
           </>
         )}
       </Popover>
-      {about ? <AboutDialog onClose={() => setAbout(false)} /> : null}
+      {open === 'about' ? <AboutDialog onClose={closeDialog} /> : null}
+      {open === 'backup' ? <BackupDialog onClose={closeDialog} /> : null}
+      {open === 'restore' ? <RestoreDialog onClose={closeDialog} /> : null}
+      {open !== null && typeof open === 'object' ? (
+        <Message title={t('backupFolder.errorTitle')} text={open.error} onClose={closeDialog} />
+      ) : null}
     </>
   )
 }

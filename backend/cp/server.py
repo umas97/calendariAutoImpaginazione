@@ -33,6 +33,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from . import __version__
 from .api import (
+    routes_backup,
     routes_events,
     routes_export,
     routes_folders,
@@ -160,6 +161,7 @@ def create_app(
     app.include_router(routes_parish.router)
     app.include_router(routes_folders.router)
     app.include_router(routes_export.router)
+    app.include_router(routes_backup.router)
 
     mount_interface(app, static_dir or STATIC_DIR)
     return app

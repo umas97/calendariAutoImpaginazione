@@ -183,3 +183,35 @@ def api(xdg_home: Path) -> Iterator[Api]:
     app = create_app(static_dir=xdg_home / "no-interface")
     with TestClient(app, base_url="http://127.0.0.1") as client:
         yield Api(client)
+
+
+# --- test 27: the budgets of SPEC §14 (tests/bench/, only with -m bench) ------------
+
+_measures: list[tuple[str, float, float, str]] = []
+
+
+@pytest.fixture
+def measure():
+    """``measure(name, value, target, unit)``: record it and check it is within the target.
+
+    The bench modules set ``pytestmark = pytest.mark.bench``, which the quick suite
+    deselects (``pyproject.toml``); run them on a machine at rest with
+    ``uv run pytest -m bench tests/bench``. Every measure is printed at the end,
+    next to its target, so the numbers can go into STATO.md.
+    """
+
+    def record(name: str, value: float, target: float, unit: str) -> None:
+        _measures.append((name, value, target, unit))
+        assert value < target, f"{name}: {value:.3g} {unit} (target < {target:g} {unit})"
+
+    return record
+
+
+def pytest_terminal_summary(terminalreporter) -> None:
+    if not _measures:
+        return
+    terminalreporter.section("budget di SPEC §14")
+    for name, value, target, unit in _measures:
+        mark = "ok " if value < target else "NO "
+        line = f"{mark} {name}: {value:.3g} {unit} (target < {target:g} {unit})"
+        terminalreporter.write_line(line)

@@ -9,12 +9,14 @@ second launch behaves.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import re
 import signal
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -111,3 +113,19 @@ def test_a_second_launch_hands_over_and_exits(env):
     finally:
         first.terminate()
         first.wait(10)
+
+
+def test_the_start_makes_the_daily_backup(env, xdg_home):
+    """SPEC §10.4: at start, a backup if the last one is more than 24 hours old."""
+    backups = xdg_home / "share" / APP_ID / "backups"
+    process, port, token = launch(env)
+    try:
+        call(port, "/api/health")
+        deadline = time.monotonic() + 10
+        while not list(backups.glob("auto-*.db")) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        call(port, "/api/app/quit", token, method="POST")
+        assert process.wait(10) == 0
+    finally:
+        process.kill()
+    assert [p.name for p in backups.glob("auto-*.db")] == [f"auto-{dt.date.today()}.db"]

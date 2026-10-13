@@ -5,9 +5,14 @@
 // the home -- the server refuses anything else. A click opens a folder; the
 // button at the bottom chooses the one open. A folder that does not exist yet
 // (the default one before the first export) opens on its nearest parent.
+//
+// With `pickFile` it chooses a backup instead (SPEC §10.4): the `.db` files are
+// listed under the folders, newest first; a click selects one, a double click
+// chooses it.
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { api, ApiError } from '../lib/api'
+import { api, ApiError, type FileEntry } from '../lib/api'
+import { longDateTime } from '../lib/dates'
 import { t } from '../i18n/it'
 import { buttonClass, Dialog } from './Dialog'
 
@@ -16,6 +21,10 @@ type Props = {
   home: string
   onChoose: (path: string) => void
   onClose: () => void
+  /** Choose a `.db` file, not a folder. */
+  pickFile?: boolean
+  title?: string
+  chooseLabel?: string
 }
 
 /** `~/Documenti/…` for a path in the home. */
@@ -26,17 +35,25 @@ export function tildePath(path: string, home: string): string {
 
 const parentOf = (path: string) => path.replace(/\/[^/]+\/?$/, '') || '/'
 
-export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
+/** `850 KB`, `1,2 MB`. */
+function fileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return t('folders.size.kb', { n: Math.max(1, Math.round(bytes / 1024)) })
+  return t('folders.size.mb', { n: (bytes / (1024 * 1024)).toFixed(1).replace('.', ',') })
+}
+
+export function FolderBrowser({ initial, home, onChoose, onClose, pickFile, title, chooseLabel }: Props) {
   const [path, setPath] = useState(initial)
   const [hidden, setHidden] = useState(false)
+  const [selected, setSelected] = useState<string | null>(null)
   const [newName, setNewName] = useState<string | null>(null)
   const [newError, setNewError] = useState<string | null>(null)
   const listing = useQuery({
-    queryKey: ['folders', path, hidden],
-    queryFn: () => api.folders(path, hidden),
+    queryKey: ['folders', path, hidden, pickFile ?? false],
+    queryFn: () => api.folders(path, hidden, pickFile ? 'db' : undefined),
     retry: false,
     staleTime: 0,
   })
+  useEffect(() => setSelected(null), [path])
 
   // Not there (yet): one level up, until something exists -- the home always does.
   const error = listing.error as ApiError | null
@@ -58,9 +75,11 @@ export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
   }
 
   const current = listing.data
+  const files = current?.files ?? []
+  const chosen = pickFile ? selected : (current?.path ?? null)
   return (
     <Dialog
-      title={t('folders.title')}
+      title={title ?? t('folders.title')}
       onClose={onClose}
       width="max-w-xl"
       footer={
@@ -68,8 +87,8 @@ export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
           <button className={buttonClass.secondary} onClick={onClose}>
             {t('common.cancel')}
           </button>
-          <button className={buttonClass.primary} disabled={!current} onClick={() => current && onChoose(current.path)}>
-            {t('folders.choose')}
+          <button className={buttonClass.primary} disabled={!chosen} onClick={() => chosen && onChoose(chosen)}>
+            {chooseLabel ?? t('folders.choose')}
           </button>
         </>
       }
@@ -90,8 +109,8 @@ export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
           <p className="p-3 text-ink-300">{t('folders.loading')}</p>
         ) : error && error.status !== 404 ? (
           <p className="p-3 text-red-400">{error.message}</p>
-        ) : current && current.folders.length === 0 ? (
-          <p className="p-3 text-ink-300">{t('folders.empty')}</p>
+        ) : current && current.folders.length === 0 && files.length === 0 ? (
+          <p className="p-3 text-ink-300">{pickFile ? t('folders.emptyFiles') : t('folders.empty')}</p>
         ) : (
           <ul>
             {current?.folders.map((folder) => (
@@ -108,11 +127,20 @@ export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
                 </button>
               </li>
             ))}
+            {files.map((file) => (
+              <FileRow
+                key={file.path}
+                file={file}
+                selected={file.path === selected}
+                onSelect={() => setSelected(file.path)}
+                onChoose={() => onChoose(file.path)}
+              />
+            ))}
           </ul>
         )}
       </div>
       <div className="flex items-center gap-3">
-        {newName === null ? (
+        {pickFile ? null : newName === null ? (
           <button type="button" className="rounded px-1 text-accent hover:bg-ink-700" onClick={() => setNewName('')}>
             + {t('folders.new')}
           </button>
@@ -139,6 +167,32 @@ export function FolderBrowser({ initial, home, onChoose, onClose }: Props) {
       </div>
       {newError ? <p className="text-red-400">{newError}</p> : null}
     </Dialog>
+  )
+}
+
+type FileProps = { file: FileEntry; selected: boolean; onSelect: () => void; onChoose: () => void }
+
+function FileRow({ file, selected, onSelect, onChoose }: FileProps) {
+  return (
+    <li>
+      <button
+        type="button"
+        aria-pressed={selected}
+        onClick={onSelect}
+        onDoubleClick={onChoose}
+        className={`flex w-full items-center gap-2 px-3 py-1.5 text-left ${
+          selected ? 'bg-accent/20 text-ink-50' : 'hover:bg-ink-700'
+        }`}
+      >
+        <span aria-hidden className="text-ink-300">
+          ◆
+        </span>
+        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+        <span className="shrink-0 text-xs text-ink-300">
+          {longDateTime(file.modified)} · {fileSize(file.size)}
+        </span>
+      </button>
+    </li>
   )
 }
 

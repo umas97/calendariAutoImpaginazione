@@ -71,6 +71,9 @@ export function longDate(iso: IsoDate): string {
   return `${WEEKDAYS[weekday(iso)]} ${day} ${MONTHS[month0]} ${year}`
 }
 
+/** `mar 13 ottobre 2026, 09:30`, for a timestamp from the server (`2026-10-13T09:30:00`). */
+export const longDateTime = (stamp: string): string => `${longDate(stamp.slice(0, 10))}, ${stamp.slice(11, 16)}`
+
 /** `12 – 18 ottobre 2026`, `28 settembre – 4 ottobre 2026`, `29 dicembre 2025 – 4 gennaio 2026`. */
 export function rangeTitle(first: IsoDate, last: IsoDate): string {
   const a = parts(first)

@@ -4,11 +4,15 @@
 
 Every path from the interface is resolved -- ``..`` and symlinks followed --
 and must land inside the user's home, or the answer is 403. The export uses
-the same check for its output folder (SPEC §2.2).
+the same check for its output folder (SPEC §2.2), the backup for its file.
+
+The picker lists folders, never files -- except the ones with a given suffix
+when asked: choosing a backup to restore lists the ``.db`` files.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import shutil
 import subprocess
@@ -57,14 +61,30 @@ def existing_folder(raw: str | Path) -> Path:
     return path
 
 
-def list_folders(raw: str | Path | None, hidden: bool = False) -> dict[str, Any]:
-    """The subfolders of a folder (never its files), alphabetical, hidden ones on request.
+def _file_entry(entry: Path) -> dict[str, Any]:
+    info = entry.stat()
+    modified = dt.datetime.fromtimestamp(info.st_mtime).replace(microsecond=0)
+    return {
+        "name": entry.name,
+        "path": str(entry),
+        "size": info.st_size,
+        "modified": modified.isoformat(),
+    }
 
-    A link that leads outside the home is left out: opening it would be refused.
+
+def list_folders(
+    raw: str | Path | None, hidden: bool = False, suffix: str | None = None
+) -> dict[str, Any]:
+    """The subfolders of a folder, alphabetical, hidden ones on request.
+
+    With ``suffix`` (``".db"``) also the files ending with it, newest first;
+    otherwise never a file. A link that leads outside the home is left out:
+    opening it would be refused.
     """
     path = existing_folder(raw) if raw else home()
     root = home()
-    folders = []
+    folders: list[dict[str, Any]] = []
+    files: list[dict[str, Any]] = []
     try:
         entries = list(path.iterdir())
     except PermissionError as exc:
@@ -73,18 +93,25 @@ def list_folders(raw: str | Path | None, hidden: bool = False) -> dict[str, Any]
         if entry.name.startswith(".") and not hidden:
             continue
         try:
-            if not entry.is_dir() or not _inside(entry.resolve(), root):
+            if not _inside(entry.resolve(), root):
                 continue
+            if entry.is_dir():
+                folders.append({"name": entry.name, "path": str(entry)})
+            elif suffix and entry.is_file() and entry.name.lower().endswith(suffix):
+                files.append(_file_entry(entry))
         except OSError:
             continue
-        folders.append({"name": entry.name, "path": str(entry)})
     folders.sort(key=lambda f: (f["name"].casefold(), f["name"]))
-    return {
+    files.sort(key=lambda f: (f["modified"], f["name"]), reverse=True)
+    listing = {
         "path": str(path),
         "parent": str(path.parent) if path != root else None,
         "home": str(root),
         "folders": folders,
     }
+    if suffix:
+        listing["files"] = files
+    return listing
 
 
 def create_folder(parent: str | Path, name: str) -> Path:
@@ -113,7 +140,11 @@ def _launcher() -> list[str] | None:
 
 def open_folder(raw: str | Path) -> Path:
     """Show a folder in the file manager: ``gio open``, else ``xdg-open``."""
-    path = existing_folder(raw)
+    return show_in_file_manager(existing_folder(raw))
+
+
+def show_in_file_manager(path: Path) -> Path:
+    """Open ``path`` -- already checked, or the program's own -- in the file manager."""
     command = _launcher()
     if command is None:
         raise NotFound("Non trovo un programma per aprire le cartelle (gio o xdg-open).")

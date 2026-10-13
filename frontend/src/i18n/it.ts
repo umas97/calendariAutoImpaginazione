@@ -5,6 +5,7 @@
 // so another language is translation work, not a refactor. Keys read like
 // paths: screen, then element. Each screen has its own file (it.taxonomy.ts,
 // ...), spread in here; what the whole program shares stays in this one.
+import { itBackup } from './it.backup'
 import { itCalendar } from './it.calendar'
 import { itExport } from './it.export'
 import { itTaxonomy } from './it.taxonomy'
@@ -23,7 +24,6 @@ export const it = {
   'menu.restore': 'Ripristina da backup…',
   'menu.backupFolder': 'Apri cartella dei backup',
   'menu.about': 'Informazioni',
-  'menu.soon': 'Arriva in una prossima versione',
   'about.title': 'Informazioni',
   'about.version': 'Versione {version}',
   'about.offline': 'Funziona senza Internet: i dati restano su questo computer.',
@@ -39,6 +39,7 @@ export const it = {
   ...itCalendar,
   ...itTaxonomy,
   ...itExport,
+  ...itBackup,
 } as const
 
 export type MessageKey = keyof typeof it

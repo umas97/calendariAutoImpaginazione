@@ -44,10 +44,15 @@ def _env(home: Path) -> dict[str, str]:
     return env
 
 
-def _run(script: Path, home: Path) -> subprocess.CompletedProcess[str]:
+def _run(
+    script: Path, home: Path, path_first: Path | None = None
+) -> subprocess.CompletedProcess[str]:
+    env = _env(home)
+    if path_first is not None:
+        env["PATH"] = f"{path_first}:{env['PATH']}"
     return subprocess.run(
         ["bash", str(script)],
-        env=_env(home),
+        env=env,
         capture_output=True,
         text=True,
         timeout=120,
@@ -121,3 +126,19 @@ def test_uninstall_removes_what_was_installed_and_keeps_the_data(tmp_path):
     # No terminal to ask on: the data stays, and the user is told how to remove it.
     assert (data / "importante.txt").is_file()
     assert "i dati restano" in result.stdout
+
+
+def test_install_stops_without_pango_and_says_how_to_get_it(tmp_path):
+    """SPEC §13: without libpango-1.0 the exact apt command, and nothing installed."""
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    ldconfig = fake / "ldconfig"
+    ldconfig.write_text("#!/bin/sh\necho '\tlibc.so.6 (libc6,x86-64) => /lib/libc.so.6'\n")
+    ldconfig.chmod(0o755)
+    home = tmp_path / "casa"
+    home.mkdir()
+    result = _run(INSTALL, home, path_first=fake)
+    assert result.returncode != 0
+    assert "manca la libreria Pango" in result.stderr
+    assert "sudo apt install libpango-1.0-0 libpangoft2-1.0-0" in result.stderr
+    assert not any(path.exists() for path in _installed(home))

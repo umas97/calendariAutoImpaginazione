@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel
@@ -24,9 +24,14 @@ class FolderIn(BaseModel):
 
 
 @router.get("")
-def list_folders(path: str = "", hidden: bool = False) -> dict[str, Any]:
-    """Subfolders of ``path`` (default: the home); hidden ones only with ``hidden=1``."""
-    return folders.list_folders(path or None, hidden)
+def list_folders(
+    path: str = "", hidden: bool = False, files: Literal["db"] | None = None
+) -> dict[str, Any]:
+    """Subfolders of ``path`` (default: the home); hidden ones only with ``hidden=1``.
+
+    ``files=db`` adds the ``.db`` files, for choosing a backup to restore.
+    """
+    return folders.list_folders(path or None, hidden, f".{files}" if files else None)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

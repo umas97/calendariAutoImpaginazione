@@ -140,6 +140,10 @@ def run(args: argparse.Namespace) -> int:
     lock.update(port=bound)
     url = f"http://{settings.host}:{bound}/"
     _log.info("server in ascolto su %s", url)
+    # The daily backup (SPEC §10.4), beside the window rather than before it.
+    from .backup import auto_backup_quietly
+
+    threading.Thread(target=auto_backup_quietly, name="auto-backup", daemon=True).start()
     _install_signal_handlers(stop)
 
     try:

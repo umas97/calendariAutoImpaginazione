@@ -43,6 +43,21 @@ command -v uv >/dev/null 2>&1 || stop "manca uv, che installa le dipendenze Pyth
 if ! uv python find 3.12 >/dev/null 2>&1; then
   stop "manca Python 3.12." "Installalo con:" "uv python install 3.12"
 fi
+# Pango lays out the text of the exported sheets (WeasyPrint): a system library.
+PANGO_FIX="sudo apt install libpango-1.0-0 libpangoft2-1.0-0"
+LDCONFIG="$(command -v ldconfig || echo /sbin/ldconfig)"
+# Read whole, then searched: with pipefail, grep -q quitting early fails the pipe.
+LIBS="$("$LDCONFIG" -p 2>/dev/null || true)"
+if ! grep -q 'libpango-1\.0\.so' <<<"$LIBS"; then
+  stop "manca la libreria Pango, che serve a comporre i fogli PDF." "Installala con:" \
+    "$PANGO_FIX" "poi rilancia ./install.sh"
+fi
+# The exports embed Inter from the package, never the system's (SPEC §3).
+FONTS="$REPO/backend/cp/export/assets/fonts"
+for font in Inter-Regular.otf Inter-SemiBold.otf Inter-Bold.otf OFL.txt; do
+  [ -f "$FONTS/$font" ] || stop "manca $FONTS/$font: il font degli export fa parte del programma." \
+    "Ripristinalo dal repository con:" "git -C \"$REPO\" checkout -- backend/cp/export/assets/fonts"
+done
 
 # --- 2. the Python environment ------------------------------------------------
 cd "$REPO"
@@ -53,6 +68,10 @@ fi
 PYTHON="$REPO/.venv/bin/python"
 [ -x "$REPO/.venv/bin/$APP_ID" ] || stop "l'ambiente $REPO/.venv non contiene $APP_ID." \
   "Rilancia ./install.sh senza CP_INSTALL_SKIP_SYNC."
+# Found is not enough: WeasyPrint must be able to load it (and its companions).
+"$PYTHON" -c "import weasyprint" >/dev/null 2>&1 || stop \
+  "il motore dei PDF (WeasyPrint) non riesce a caricare Pango." "Installa le librerie con:" \
+  "$PANGO_FIX" "poi rilancia ./install.sh"
 [ -f "$REPO/packaging/icons/$APP_ID.svg" ] || "$PYTHON" "$REPO/packaging/make_icons.py"
 
 # --- 3. the interface ---------------------------------------------------------

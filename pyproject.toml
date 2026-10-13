@@ -41,6 +41,9 @@ package = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["backend"]
+# The budgets of SPEC §14 (test 27) are slow: only with `-m bench` (tests/bench/).
+addopts = "-m 'not bench'"
+markers = ["bench: measures of SPEC §14, run on their own with -m bench"]
 
 [tool.ruff]
 line-length = 100

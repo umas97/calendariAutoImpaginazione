@@ -6,6 +6,9 @@ There is one database per program, opened by :func:`open_database` when the
 server is created. Sessions are short: :func:`session_scope` commits or rolls
 back and closes. Nothing holds a session while doing slow work (the export
 reads its data, closes the session, then composes).
+
+Every session holds the database's :class:`Gate` shared; a restore holds it
+exclusive while it swaps the file underneath (``backup.py``, SPEC §10.4).
 """
 
 from __future__ import annotations
@@ -26,7 +29,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..config import APP_ID
 from .models import Setting
 
-__all__ = ["Database", "get_database", "open_database", "session_scope"]
+__all__ = ["Database", "Gate", "get_database", "open_database", "session_scope"]
 
 _log = logging.getLogger(__name__)
 
@@ -58,9 +61,55 @@ def head_schema_version() -> int:
     return int(head or 0)
 
 
+class Gate:
+    """Many sessions at once, or one owner alone: a shared/exclusive lock.
+
+    Shared is re-entrant within a thread, so a session opened inside another
+    never waits for an owner that is itself waiting for the outer one to end.
+    """
+
+    def __init__(self) -> None:
+        self._cond = threading.Condition()
+        self._shared = 0
+        self._exclusive = False
+        self._local = threading.local()
+
+    @contextmanager
+    def shared(self) -> Iterator[None]:
+        depth = getattr(self._local, "depth", 0)
+        if depth == 0:
+            with self._cond:
+                self._cond.wait_for(lambda: not self._exclusive)
+                self._shared += 1
+        self._local.depth = depth + 1
+        try:
+            yield
+        finally:
+            self._local.depth = depth
+            if depth == 0:
+                with self._cond:
+                    self._shared -= 1
+                    self._cond.notify_all()
+
+    @contextmanager
+    def exclusive(self) -> Iterator[None]:
+        with self._cond:
+            self._cond.wait_for(lambda: not self._exclusive)
+            # Claimed first: no new session starts while the open ones finish.
+            self._exclusive = True
+            self._cond.wait_for(lambda: self._shared == 0)
+        try:
+            yield
+        finally:
+            with self._cond:
+                self._exclusive = False
+                self._cond.notify_all()
+
+
 class Database:
     def __init__(self, path: Path) -> None:
         self.path = path
+        self.gate = Gate()
         path.parent.mkdir(parents=True, exist_ok=True)
         self.engine: Engine = create_engine(
             f"sqlite:///{path}", connect_args={"check_same_thread": False}
@@ -80,15 +129,16 @@ class Database:
 
     @contextmanager
     def session(self) -> Iterator[Session]:
-        session = self.sessions()
-        try:
-            yield session
-            session.commit()
-        except BaseException:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        with self.gate.shared():
+            session = self.sessions()
+            try:
+                yield session
+                session.commit()
+            except BaseException:
+                session.rollback()
+                raise
+            finally:
+                session.close()
 
     def dispose(self) -> None:
         self.engine.dispose()
