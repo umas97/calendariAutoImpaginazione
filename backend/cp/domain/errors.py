@@ -38,6 +38,11 @@ class DomainError(Exception):
         return {"error": error}
 
 
+class Forbidden(DomainError):
+    status = 403
+    code = "forbidden"
+
+
 class NotFound(DomainError):
     status = 404
     code = "not_found"

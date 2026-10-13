@@ -154,6 +154,10 @@ def run(args: argparse.Namespace) -> int:
     finally:
         if window is not None:
             window.close()
+        # A running export may finish (30 s at most) before the server goes (SPEC §11).
+        from .export.jobs import runner
+
+        runner.shutdown()
         server.stop()
         lock.release()
         _log.info("chiuso")

@@ -32,7 +32,14 @@ from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from . import __version__
-from .api import routes_events, routes_settings, routes_taxonomy
+from .api import (
+    routes_events,
+    routes_export,
+    routes_folders,
+    routes_parish,
+    routes_settings,
+    routes_taxonomy,
+)
 from .api.errors import install_error_handlers
 from .config import APP_ID, APP_NAME, WINDOW_PATH, env, get_settings
 from .controls import AppControls
@@ -150,6 +157,9 @@ def create_app(
     app.include_router(routes_taxonomy.categories)
     app.include_router(routes_events.router)
     app.include_router(routes_settings.router)
+    app.include_router(routes_parish.router)
+    app.include_router(routes_folders.router)
+    app.include_router(routes_export.router)
 
     mount_interface(app, static_dir or STATIC_DIR)
     return app

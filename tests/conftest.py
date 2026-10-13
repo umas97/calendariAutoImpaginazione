@@ -34,6 +34,8 @@ def xdg_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
     ):
         (home / sub).mkdir(parents=True)
         monkeypatch.setenv(variable, str(home / sub))
+    # The export and the folder picker live inside $HOME: never the real one.
+    monkeypatch.setenv("HOME", str(home))
     for name in ("PORT", "LOG_LEVEL", "BROWSER", "DEV"):
         monkeypatch.delenv(f"CP_{name}", raising=False)
     get_settings.cache_clear()

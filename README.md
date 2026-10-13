@@ -62,6 +62,14 @@ cd frontend && npm install && npm run dev  # http://localhost:5173
 npm run build                              # scrive in backend/cp/static/
 ```
 
+Fogli di prova dell'export (database temporaneo con dati sintetici: 10, 30 e 80 eventi su un
+foglio ciascuno, più il calendario completo; la cartella deve stare sotto la home):
+
+```sh
+uv run python -m cp.export.samples out/prova          # solo PDF
+uv run python -m cp.export.samples out/prova --png    # anche PNG a 200 dpi
+```
+
 ## Struttura
 
 ```
@@ -74,9 +82,16 @@ backend/cp/
   window.py          la finestra dell'applicazione
   single_instance.py un solo programma alla volta
   db/                SQLite: modelli, sessioni brevi, migrazioni Alembic
-  domain/            regole: eventi, gruppi e categorie, validazione, colori, impostazioni
+  domain/            regole: eventi, gruppi e categorie, validazione, colori, impostazioni,
+                     intestazione della parrocchia (nome e logo)
+  export/            motore di export: selezione degli eventi per foglio, formattazione in
+                     italiano, modelli HTML/CSS, adattamento all'A4, PDF (WeasyPrint), PNG
+                     (pypdfium2), nomi dei file, job in background, anteprima in memoria;
+                     assets/fonts/ contiene il font Inter (licenza OFL accanto)
+  folders.py         selettore di cartelle, sempre dentro la home
   api/               route HTTP (/api/groups, /api/categories, /api/events, /api/places,
-                     /api/settings) e formato uniforme degli errori
+                     /api/settings, /api/parish, /api/folders, /api/export) e formato
+                     uniforme degli errori
   static/            l'interfaccia servita dal server
 frontend/            sorgenti React + TypeScript + Vite
 packaging/           icone e loro generatore
@@ -90,6 +105,9 @@ Quelle elencate nella SPEC (§4) più:
 
 - `httpx2` (solo sviluppo): richiesto dal `TestClient` di FastAPI/Starlette per i test delle API
   senza avviare un server vero.
+
+Il font Inter 4.1 (`backend/cp/export/assets/fonts/`, solo Regular, SemiBold e Bold) è
+distribuito con la SIL Open Font License 1.1, il cui testo è in `OFL.txt` nella stessa cartella.
 
 ## Licenza
 

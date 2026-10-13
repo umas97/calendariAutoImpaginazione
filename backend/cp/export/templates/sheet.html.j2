@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>{{ sheet.title }}</title>
+<meta name="generator" content="{{ generator }}">
+<style>
+{{ css | safe }}
+@page {
+  @bottom-right {
+{% if layout.multipage %}
+    content: {{ sheet.updated | css_string }} " · pagina " counter(page) " di " counter(pages);
+{% else %}
+    content: {{ sheet.updated | css_string }};
+{% endif %}
+  }
+}
+html { font-size: {{ layout.font_pt }}pt; }
+</style>
+</head>
+<body class="{{ 'two-columns' if layout.columns == 2 else 'one-column' }}">
+<header class="head">
+{% if logo %}
+  <img class="logo" src="{{ logo }}" alt="">
+{% endif %}
+  <div class="titles">
+{% if sheet.letterhead.parish %}
+    <p class="parish">{{ sheet.letterhead.parish }}</p>
+{% endif %}
+    <h1>{{ sheet.title }}</h1>
+    <p class="period">{{ sheet.period }}</p>
+{% if sheet.groups_line %}
+    <p class="groups">{{ sheet.groups_line }}</p>
+{% endif %}
+  </div>
+</header>
+{% if sheet.legend %}
+<ul class="legend">
+{% for swatch in sheet.legend %}
+  <li><span class="dot" style="background: {{ swatch.color }}"></span>{{ swatch.name }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<main class="list">
+{% for month in sheet.months %}
+  <h2 class="month">{{ month.heading }}</h2>
+{% for row in month.rows %}
+  <div class="event">
+    <div class="bar" style="background: {{ row.colors | bar }}"></div>
+    <div class="date{{ ' days' if '–' in row.weekday else '' }}"><span class="weekday">{{ row.weekday }}</span> <span class="day" style="color: {{ row.day_color }}">{{ row.day }}</span></div>
+    <div class="time">{{ row.time }}</div>
+    <div class="what"><span class="title">{{ row.title }}</span>{% if row.groups %}<span class="for"> · {{ row.groups | join(', ') }}</span>{% endif %}{% if row.place %}<span class="place"> · {{ row.place }}</span>{% endif %}</div>
+  </div>
+{% endfor %}
+{% endfor %}
+</main>
+</body>
+</html>

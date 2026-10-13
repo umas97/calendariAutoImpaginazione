@@ -1,0 +1,137 @@
+/* The printed sheet (SPEC §8.3): white, near-black text, colour only on bars,
+   dots and day numbers. Sizes are in rem/em of the title size set on <html>,
+   so the whole sheet scales with it (SPEC §8.4); the page furniture does not. */
+
+@font-face { font-family: "Inter CP"; src: url("fonts/Inter-Regular.otf"); font-weight: 400; }
+@font-face { font-family: "Inter CP"; src: url("fonts/Inter-SemiBold.otf"); font-weight: 600; }
+@font-face { font-family: "Inter CP"; src: url("fonts/Inter-Bold.otf"); font-weight: 700; }
+
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+  @bottom-right {
+    font-family: "Inter CP";
+    font-size: 7pt;
+    color: #6B7280;
+    vertical-align: middle;
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Inter CP";
+  font-size: 1rem;
+  line-height: 1.15;
+  color: #1F2328;
+  background: #FFFFFF;
+}
+
+/* --- header ---------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+}
+.logo {
+  display: block;
+  max-height: 18mm;
+  max-width: 45mm;
+  flex: none;
+}
+.parish {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0.08em 0 0.12em;
+}
+.period { font-size: 1rem; color: #1F2328; }
+.groups { font-size: 0.8rem; color: #6B7280; margin-top: 0.2em; }
+
+.legend {
+  list-style: none;
+  margin-top: 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 0.6pt solid #D1D5DB;
+  font-size: 0.85rem;
+}
+.legend li {
+  display: inline-block;
+  margin-right: 1.4em;
+  white-space: nowrap;
+}
+.dot {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  margin-right: 0.4em;
+  vertical-align: 0;
+}
+
+/* --- the list ----------------------------------------------------------------- */
+
+.list { margin-top: 0.5rem; }
+.two-columns .list {
+  columns: 2;
+  column-gap: 5mm;
+  column-rule: 0.4pt solid #E5E7EB;
+}
+
+.month {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #6B7280;
+  margin: 0.55rem 0 0.1rem;
+  break-after: avoid;
+}
+.list > .month:first-child { margin-top: 0.4rem; }
+
+/* One event per row (SPEC §8.3, compact row chosen by the user on 2026-10-13):
+   bar · "sab 18" · time · title · place, wrapping to two lines at most.
+   A table, because its cells stretch the bar to the row's full height and
+   WeasyPrint lays tables out much faster than grids. */
+.event {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 0.1em;
+  break-inside: avoid;
+}
+.event > div { display: table-cell; vertical-align: top; }
+.bar { width: 1.2mm; }
+
+.date {
+  width: 3.8em;
+  padding-left: 0.5em;
+  white-space: nowrap;
+}
+.weekday { font-size: 0.7em; color: #6B7280; }
+.day { font-size: 1.15em; font-weight: 600; line-height: 1; }
+/* Several days: the two ranges stacked, smaller. */
+.days .weekday { display: block; }
+.days .day { display: block; font-size: 0.8em; line-height: 1.15; }
+
+.event > .time {
+  width: 7.1em;
+  padding: 0.12em 0 0 0.4em;
+  font-size: 0.88em;
+}
+
+.what {
+  padding: 0.05em 0 0 0.4em;
+  line-clamp: 2;
+}
+.title { font-weight: 700; }
+.for { font-size: 0.8em; color: #6B7280; }
+.place { font-size: 0.85em; color: #6B7280; }

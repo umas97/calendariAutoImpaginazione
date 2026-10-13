@@ -394,10 +394,9 @@ A4 verticale (210 × 297 mm), margini 14 mm, font Inter incluso.
 │  ● Catechesi   ● Messa   ● Ritiro   (legenda) │
 │ ──────────────────────────────────────────── │
 │ OTTOBRE 2026                                  │
-│ ▌ sab   15:00 – 16:30   Incontro di gruppo    │
-│ ▌ 18                    Oratorio              │
-│ ▌ dom   10:30 – 11:30   Messa con i genitori  │
-│ ▌ 26                    Chiesa parrocchiale   │
+│ ▌ sab 18  15:00 – 16:30  Incontro di gruppo · │
+│ ▌                        Oratorio             │
+│ ▌ dom 26  10:30 – 11:30  Messa · Chiesa       │
 │ NOVEMBRE 2026                                 │
 │ …                                             │
 │                        aggiornato al 13/10/2026│
@@ -410,15 +409,18 @@ A4 verticale (210 × 297 mm), margini 14 mm, font Inter incluso.
   sotto il periodo compare l'elenco dei gruppi inclusi.
 - **Legenda**: un pallino colorato + nome per ogni categoria selezionata **che compare in
   almeno un evento del foglio**, nell'ordine delle categorie.
-- **Riga evento**: barra verticale sinistra larga 1.2 mm col colore della categoria; se
-  l'evento ha più categorie selezionate, la barra è divisa in segmenti uguali nell'ordine
-  delle categorie dell'evento. Mostra **solo le categorie selezionate** per quell'export.
-  Colonna data (giorno della settimana piccolo, numero grande colorato con
-  `text_color` della categoria principale tra quelle selezionate), colonna orario, titolo in
-  grassetto, luogo sotto in grigio (omesso se vuoto). Il titolo va a capo, al massimo 2 righe,
-  poi ellissi.
-- Nel calendario completo, dopo il titolo, i gruppi in piccolo grigio: `· Cresimandi,
-  5ª elementare`.
+- **Riga evento** (riga **compatta**, decisione dell'utente del 2026-10-13: con la riga su due
+  righe gli obiettivi di §8.4 non si raggiungevano): barra verticale sinistra larga 1.2 mm col
+  colore della categoria, alta quanto la riga; se l'evento ha più categorie selezionate, la
+  barra è divisa in segmenti uguali nell'ordine delle categorie dell'evento. Mostra **solo le
+  categorie selezionate** per quell'export. Colonna data su una riga (giorno della settimana
+  piccolo grigio, numero più grande colorato con `text_color` della categoria principale tra
+  quelle selezionate: `sab 18`; per gli eventi su più giorni le due parti una sopra l'altra,
+  più piccole), colonna orario, titolo in grassetto seguito sulla stessa riga dal luogo in
+  grigio (`Incontro di gruppo · Oratorio`, omesso se vuoto). Titolo e luogo vanno a capo se
+  non ci stanno, al massimo 2 righe, poi ellissi.
+- Nel calendario completo, dopo il titolo e prima del luogo, i gruppi in piccolo grigio:
+  `· Cresimandi, 5ª elementare`.
 - **Piè di pagina**: «aggiornato al GG/MM/AAAA» in piccolo grigio a destra; nel calendario
   completo anche «pagina N di M».
 - Nessuno sfondo pieno, nessuna ombra: bianco, testo quasi nero (`#1F2328`), grigio
@@ -448,6 +450,8 @@ Il calendario completo non usa l'adattamento: corpo fisso **10 pt**, una colonna
 Obiettivi da verificare in Fase 4 con titoli e luoghi di lunghezza realistica (titolo medio
 ~30 caratteri, luogo ~20): **30 eventi** stanno in una colonna a ≥ 9 pt; **80 eventi** stanno
 in due colonne a ≥ 7.5 pt. Se non si raggiungono, ricalibrare la riga **dopo aver chiesto**.
+Verificati il 2026-10-13 con la riga compatta (test 14): 30 eventi in una colonna a 11 pt,
+80 eventi in due colonne a 7.5 pt (capienza ~80–84 eventi a quel corpo).
 
 ### 8.5 PDF e PNG (test 15–17)
 
