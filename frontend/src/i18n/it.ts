@@ -33,7 +33,7 @@ export const it = {
   'about.feature.taxonomy':
     'Gruppi e categorie: ogni evento appartiene a uno o più gruppi e ha una o più categorie, ciascuna con il suo colore.',
   'about.feature.export':
-    'Export: PDF da stampare o PNG da condividere, un foglio per gruppo in ordine cronologico. Ogni foglio si adatta da solo alla pagina A4, con intestazione e logo a scelta.',
+    'Export: PDF da stampare o PNG da condividere, un foglio per gruppo o per categoria, in ordine cronologico. Ogni foglio si adatta da solo alla pagina A4, con intestazione e logo a scelta.',
   'about.data': 'I tuoi dati',
   'about.offline':
     'Funziona senza Internet e non invia nulla: i dati restano su questo computer. Ogni giorno, all’avvio, viene salvato un backup automatico (restano gli ultimi 14); dal menu «⋯» puoi farne uno quando vuoi o ripristinarlo.',

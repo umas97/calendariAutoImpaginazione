@@ -1,27 +1,32 @@
 # calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Category colours: the default palette, its assignment, and readable text (SPEC §6.2)."""
+"""Colours of categories and groups: the palette, its assignment, readable text (SPEC §6.2)."""
 
 from __future__ import annotations
 
 import colorsys
 import re
+from collections import Counter
 from collections.abc import Iterable
 
-#: Twelve colours that stay apart from one another and survive a printer.
+#: Twelve colours that stay apart from one another and survive a printer, in the
+#: order they are handed out: neighbouring hues never come one after the other,
+#: so the first few categories differ the most. Mostly dark enough to read as
+#: text on white, so the day numbers of the export match the bars (CIEDE2000
+#: between any two of the first six, bars and numbers: >= 19; of all twelve: >= 13).
 PALETTE: tuple[str, ...] = (
-    "#E63946",  # rosso
-    "#F4A261",  # arancio
-    "#E9C46A",  # ocra
-    "#43AA8B",  # verde
-    "#2A9D8F",  # verde acqua
-    "#00A6ED",  # azzurro
-    "#277DA1",  # blu
-    "#577590",  # ardesia
-    "#9B5DE5",  # viola
-    "#F15BB5",  # rosa
-    "#8D6E63",  # marrone
-    "#6C757D",  # grigio
+    "#1976D2",  # blu
+    "#D32F2F",  # rosso
+    "#2E7D32",  # verde
+    "#F57C00",  # arancio
+    "#8E24AA",  # viola
+    "#00838F",  # ottanio
+    "#C2185B",  # magenta
+    "#6D4C41",  # marrone
+    "#FBC02D",  # giallo
+    "#283593",  # indaco
+    "#C0CA33",  # lime
+    "#757575",  # grigio
 )
 
 _HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -37,9 +42,13 @@ def normalize_color(value: str) -> str | None:
 
 
 def next_color(used: Iterable[str]) -> str:
-    """The first palette colour no category uses yet; the first one when all are taken."""
-    taken = {color.upper() for color in used}
-    return next((color for color in PALETTE if color not in taken), PALETTE[0])
+    """The first palette colour nobody uses yet; when all are taken, the least used.
+
+    Ties go to the earlier colour, so past the twelfth the palette starts again
+    from the first, then the second, and so on.
+    """
+    counts = Counter(color.upper() for color in used)
+    return min(PALETTE, key=lambda color: counts[color])
 
 
 def _rgb(hex_color: str) -> tuple[float, float, float]:

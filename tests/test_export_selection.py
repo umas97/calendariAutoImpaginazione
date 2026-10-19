@@ -8,9 +8,10 @@ import datetime as dt
 
 import pytest
 
-from cp.domain.palette import text_color
+from cp.domain.palette import PALETTE, text_color
+from cp.export.counts import event_counts
 from cp.export.request import ExportRequest, check_request
-from cp.export.selection import build_sheets, event_counts
+from cp.export.selection import build_sheets
 
 TODAY = dt.date(2026, 10, 13)
 
@@ -181,7 +182,7 @@ def test_counts(parish):
             ]
         )
     )
-    assert counts == {"groups": {p["cresimandi"]: 3, p["coro"]: 3}, "combined": 5}
+    assert counts == {"sheets": {p["cresimandi"]: 3, p["coro"]: 3}, "combined": 5}
 
 
 def test_selection_errors(parish, api):
@@ -234,3 +235,137 @@ def test_request_period_of_400_days_is_fine_and_duplicates_collapse():
     )
     assert clean.formats == ["pdf", "png"]
     assert [(s.group_id, s.category_ids) for s in clean.selections] == [(1, [2, 3])]
+
+
+# --- sheets per category -----------------------------------------------------------------
+
+
+def by_category(chosen, mode="per_group", **extra):
+    return request([], mode=mode, by="category", category_selections=chosen, **extra)
+
+
+def test_category_sheet_rule_category_and_group(parish):
+    p = parish
+    sheets = build_sheets(
+        by_category(
+            [
+                {"category_id": p["messa"], "group_ids": [p["coro"], p["cresimandi"]]},
+                {"category_id": p["catechesi"], "group_ids": [p["cresimandi"]]},
+            ]
+        ),
+        today=TODAY,
+    )
+    catechesi, messa = sheets  # the categories' order, not the request's
+    assert (catechesi.title, catechesi.subject_id) == ("Catechesi", p["catechesi"])
+    assert [r.event_id for r in rows(catechesi)] == [p["incontro"], p["messa_insieme"]]
+    assert [r.event_id for r in rows(messa)] == [p["messa_insieme"], p["prove"]]
+    assert messa.groups_line == "" and messa.period == "ottobre – dicembre 2026"
+
+
+def test_category_sheet_is_coloured_and_labelled_by_group(parish):
+    p = parish
+    blue, red = PALETTE[0], PALETTE[1]  # Cresimandi, Coro: handed out in order
+    (messa,) = build_sheets(
+        by_category([{"category_id": p["messa"], "group_ids": [p["coro"], p["cresimandi"]]}]),
+        today=TODAY,
+    )
+    insieme, prove = rows(messa)
+    assert insieme.groups == ("Cresimandi", "Coro")  # the groups' order
+    assert insieme.colors == (blue, red)
+    assert insieme.day_color == text_color(blue)
+    assert (prove.groups, prove.colors) == (("Coro",), (red,))
+    assert [(s.name, s.color) for s in messa.legend] == [("Cresimandi", blue), ("Coro", red)]
+
+    (only_coro,) = build_sheets(
+        by_category([{"category_id": p["messa"], "group_ids": [p["coro"]]}]), today=TODAY
+    )
+    insieme, _prove = rows(only_coro)
+    assert (insieme.groups, insieme.colors) == (("Coro",), (red,))
+    assert [s.name for s in only_coro.legend] == ["Coro"]
+
+
+def test_combined_by_category_is_combined_by_group_turned_round(parish):
+    p = parish
+    (chosen_by_category,) = build_sheets(
+        by_category(
+            [
+                {"category_id": p["messa"], "group_ids": [p["coro"]]},
+                {"category_id": p["festa"], "group_ids": [p["cresimandi"]]},
+            ],
+            mode="combined",
+        ),
+        today=TODAY,
+    )
+    (chosen_by_group,) = build_sheets(
+        request(
+            [
+                {"group_id": p["cresimandi"], "category_ids": [p["festa"]]},
+                {"group_id": p["coro"], "category_ids": [p["messa"]]},
+            ],
+            mode="combined",
+        ),
+        today=TODAY,
+    )
+    assert chosen_by_category == chosen_by_group
+    assert [r.event_id for r in rows(chosen_by_category)] == [
+        p["campo"],
+        p["messa_insieme"],
+        p["prove"],
+    ]
+
+
+def test_category_sheets_several_pages_and_counts(parish):
+    p = parish
+    chosen = [
+        {"category_id": p["catechesi"], "group_ids": [p["cresimandi"]]},
+        {"category_id": p["messa"], "group_ids": [p["cresimandi"], p["coro"]]},
+        {"category_id": p["festa"], "group_ids": []},
+    ]
+    sheets = build_sheets(by_category(chosen[:2], multipage=[p["messa"]]), today=TODAY)
+    assert [s.multipage for s in sheets] == [False, True]
+    counts = event_counts(by_category(chosen), [p["messa"]])
+    assert counts == {
+        "sheets": {p["catechesi"]: 2, p["messa"]: 2, p["festa"]: 0},
+        "combined": 2,
+    }
+
+
+def test_category_selection_errors(parish):
+    p = parish
+    from cp.domain.errors import Invalid
+
+    with pytest.raises(Invalid, match="Categoria inesistente: 999"):
+        build_sheets(by_category([{"category_id": 999, "group_ids": [p["coro"]]}]))
+    with pytest.raises(Invalid, match="Gruppo inesistente: 999"):
+        build_sheets(by_category([{"category_id": p["messa"], "group_ids": [999]}]))
+    with pytest.raises(Invalid, match="almeno un gruppo per “Messa”"):
+        build_sheets(by_category([{"category_id": p["messa"], "group_ids": []}]))
+
+
+def test_request_by_category_keeps_only_its_own_choices():
+    from cp.domain.errors import InvalidFields
+
+    base = {
+        "period": {"from": "2026-10-01", "to": "2026-10-31"},
+        "by": "category",
+        "selections": [{"group_id": 1, "category_ids": [1]}],
+    }
+    with pytest.raises(InvalidFields) as info:
+        check_request(ExportRequest.model_validate(base), needs_output=False)
+    assert info.value.field == "category_selections"
+    clean = check_request(
+        ExportRequest.model_validate(
+            base
+            | {
+                "category_selections": [
+                    {"category_id": 2, "group_ids": [3, 3, 4]},
+                    {"category_id": 2, "group_ids": [5]},
+                ],
+                "multipage": [2, 9],
+            }
+        ),
+        needs_output=False,
+    )
+    assert clean.selections == []
+    assert [(s.category_id, s.group_ids) for s in clean.category_selections] == [(2, [3, 4])]
+    assert clean.multipage == [2]

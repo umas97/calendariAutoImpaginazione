@@ -5,7 +5,8 @@ Calendario dei gruppi parrocchiali con fogli A4 da distribuire.
 Un programma desktop per Linux con cui chi coordina le attività della parrocchia tiene il
 calendario dei gruppi (classi di catechismo, cresimandi, giovanissimi, coro, oratorio…) e ne
 ricava **fogli A4 pronti da distribuire**: un foglio per gruppo, con i soli eventi di quel gruppo,
-in ordine cronologico e colorati per categoria. In PDF da stampare o in PNG da mandare su WhatsApp.
+in ordine cronologico e colorati per categoria, oppure un foglio per categoria (tutti i ritiri,
+tutte le messe…) colorato per gruppo. In PDF da stampare o in PNG da mandare su WhatsApp.
 
 Funziona senza Internet: i dati restano su questo computer.
 
@@ -72,8 +73,9 @@ Il programma ha tre schede:
 - **Gruppi e categorie** — creare, rinominare, ricolorare, riordinare (trascinando), archiviare i
   gruppi degli anni passati, eliminare (scegliendo cosa fare degli eventi che resterebbero senza
   gruppo o categoria).
-- **Export** — periodo, modalità (un file per gruppo, PDF unico con una pagina per gruppo,
-  calendario completo), formato (PDF e/o PNG a 150/200/300 dpi), gruppi e categorie, intestazione
+- **Export** — periodo, un foglio per gruppo o per categoria, modalità (un file per foglio, PDF
+  unico con una pagina per foglio, calendario completo), formato (PDF e/o PNG a 150/200/300 dpi),
+  gruppi e categorie (nei fogli per categoria barre e legenda hanno i colori dei gruppi), intestazione
   (nome della parrocchia e logo), cartella. A destra l'anteprima, che è lo stesso PDF che verrà
   salvato. Ogni foglio sta in una facciata A4: il testo si rimpicciolisce e, se serve, passa a due
   colonne; se nemmeno così ci sta, il programma lo dice e propone «Esporta su più pagine».

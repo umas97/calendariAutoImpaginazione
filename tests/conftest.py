@@ -148,8 +148,11 @@ class Api:
     def delete(self, path: str, **kwargs: Any) -> Any:
         return self.client.delete(path, **kwargs)
 
-    def group(self, name: str = "Cresimandi") -> int:
-        response = self.post("/api/groups", json={"name": name})
+    def group(self, name: str = "Cresimandi", color: str | None = None) -> int:
+        body: dict[str, Any] = {"name": name}
+        if color is not None:
+            body["color"] = color
+        response = self.post("/api/groups", json=body)
         assert response.status_code == 201, response.text
         return response.json()["id"]
 

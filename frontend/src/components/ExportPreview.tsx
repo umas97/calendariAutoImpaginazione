@@ -6,6 +6,7 @@
 // in red, "non entra in un A4" and the way out: "Esporta su più pagine". While
 // a new preview is prepared the old pages stay, dimmed.
 import type { SheetLayout } from '../lib/api'
+import type { ExportBy } from '../lib/api'
 import type { SheetId } from '../lib/exportForm'
 import type { SheetPreview, SheetResult } from '../lib/preview'
 import { plural, t } from '../i18n/it'
@@ -20,6 +21,8 @@ type Props = {
   waiting: boolean
   multipage: number[]
   onMultipage: (id: number, on: boolean) => void
+  /** Sheets per group or per category: the wording of the empty and too-big notes. */
+  by: ExportBy
 }
 
 const pt = (value: number) => String(value).replace('.', ',')
@@ -31,9 +34,9 @@ export function layoutLabel(layout: SheetLayout, pages: number): string {
   return t(layout.columns === 1 ? 'preview.layout.one' : 'preview.layout.two', { pt: pt(layout.font_pt) })
 }
 
-export function ExportPreview({ sheets, focus, onFocus, sheet, waiting, multipage, onMultipage }: Props) {
+export function ExportPreview({ sheets, focus, onFocus, sheet, waiting, multipage, onMultipage, by }: Props) {
   if (!sheets.length) {
-    return <p className="m-auto max-w-sm text-center text-sm text-ink-300">{t('preview.none')}</p>
+    return <p className="m-auto max-w-sm text-center text-sm text-ink-300">{t(`preview.none.${by}`)}</p>
   }
   const index = Math.max(0, sheets.findIndex((s) => s.id === focus))
   const current = sheets[index]
@@ -89,11 +92,12 @@ export function ExportPreview({ sheets, focus, onFocus, sheet, waiting, multipag
         ) : (
           <div className={`mx-auto space-y-4 transition-opacity ${stale ? 'opacity-50' : ''}`} style={{ width: PAGE_WIDTH }}>
             {result.eventCount === 0 ? (
-              <p className="mt-6 text-center text-sm text-ink-300">{t('preview.empty')}</p>
+              <p className="mt-6 text-center text-sm text-ink-300">{t(`preview.empty.${by}`)}</p>
             ) : !result.fits ? (
               <TooBig
                 title={current.title}
                 count={result.eventCount}
+                by={by}
                 onMultipage={typeof current.id === 'number' ? () => onMultipage(current.id as number, true) : undefined}
               />
             ) : null}
@@ -141,11 +145,13 @@ function SheetLabel({ result }: { result: Extract<SheetResult, { status: 'done' 
   )
 }
 
-function TooBig({ title, count, onMultipage }: { title: string; count: number; onMultipage?: () => void }) {
+type TooBigProps = { title: string; count: number; by: ExportBy; onMultipage?: () => void }
+
+function TooBig({ title, count, by, onMultipage }: TooBigProps) {
   return (
     <div className="space-y-3 rounded-md border border-red-500/40 bg-red-500/10 p-4 text-sm">
       <p className="font-medium text-red-300">{t('preview.tooBig')}</p>
-      <p className="text-ink-100">{t('preview.tooBigText', { group: title, n: count })}</p>
+      <p className="text-ink-100">{t(`preview.tooBigText.${by}`, { title, n: count })}</p>
       {onMultipage ? (
         <button type="button" className={buttonClass.secondary} onClick={onMultipage}>
           {t('preview.multipage')}

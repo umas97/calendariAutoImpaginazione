@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // The export under way and then its summary (SPEC §8.7, §9.1): a bar that
-// counts the sheets, then the files made, the groups skipped with the reason,
-// "Apri cartella", and "Esporta su più pagine" for the groups that did not fit
+// counts the sheets, then the files made, the sheets skipped with the reason,
+// "Apri cartella", and "Esporta su più pagine" for the sheets that did not fit
 // one page. It cannot be closed while the export runs: there is nothing to
 // interrupt, and it never takes long.
 import { useState } from 'react'
@@ -16,14 +16,14 @@ type Props = {
   job: ExportJob
   home: string
   onClose: () => void
-  /** Redo these groups over several pages; absent when that is not possible. */
-  onMultipage?: (groupIds: number[]) => void
+  /** Redo these sheets (group or category ids) over several pages; absent when that is not possible. */
+  onMultipage?: (sheetIds: number[]) => void
 }
 
 export function ExportJobDialog({ job, home, onClose, onMultipage }: Props) {
   const [openError, setOpenError] = useState<string | null>(null)
   const running = job.status === 'running'
-  const tooBig = job.skipped.filter((s) => s.reason === 'too_big' && s.group_id !== null)
+  const tooBig = job.skipped.filter((s) => s.reason === 'too_big' && s.sheet_id !== null)
   const title = running
     ? t('job.title')
     : job.status === 'done'
@@ -106,14 +106,14 @@ export function ExportJobDialog({ job, home, onClose, onMultipage }: Props) {
               <p className="font-medium text-ink-50">{t('job.skipped')}</p>
               <ul className="mt-1 space-y-1">
                 {job.skipped.map((skip) => (
-                  <li key={`${skip.group_id}-${skip.reason}`} className="flex items-start gap-2">
+                  <li key={`${skip.sheet_id}-${skip.reason}`} className="flex items-start gap-2">
                     <span className={`flex-1 ${skip.reason === 'empty' ? 'text-ink-300' : 'text-red-400'}`}>
-                      {skip.group}: {skip.message}
+                      {skip.title}: {skip.message}
                     </span>
                     {skip.reason === 'too_big' && onMultipage && tooBig.length === 1 ? (
                       <button
                         className={`${buttonClass.secondary} shrink-0`}
-                        onClick={() => onMultipage([skip.group_id!])}
+                        onClick={() => onMultipage([skip.sheet_id!])}
                       >
                         {t('job.multipage')}
                       </button>
@@ -124,7 +124,7 @@ export function ExportJobDialog({ job, home, onClose, onMultipage }: Props) {
               {onMultipage && tooBig.length > 1 ? (
                 <button
                   className={`${buttonClass.secondary} mt-2`}
-                  onClick={() => onMultipage(tooBig.map((s) => s.group_id!))}
+                  onClick={() => onMultipage(tooBig.map((s) => s.sheet_id!))}
                 >
                   {t('job.multipageAll')}
                 </button>

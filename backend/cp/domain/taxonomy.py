@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Groups and categories (SPEC §6; tests 2-3, 9-11).
 
-The two kinds behave the same -- names, order, archive, deletion with orphans --
-so one set of functions serves both, driven by a :class:`Kind`. Categories add
-a colour, and their links have an order (the first is the main category), which
-deletion must keep contiguous.
+The two kinds behave the same -- names, colours, order, archive, deletion with
+orphans -- so one set of functions serves both, driven by a :class:`Kind`. Each
+kind hands out the palette on its own. Category links have an order (the first
+is the main category), which deletion must keep contiguous.
 """
 
 from __future__ import annotations
@@ -122,11 +122,10 @@ def create_item(
     _check_unique(session, kind, name)
     position = (session.scalar(select(func.max(kind.model.position))) or 0) + 1
     item = kind.model(name=name, name_key=name.casefold(), position=position, archived=False)
-    if kind is CATEGORIES:
-        if color is None:
-            item.color = next_color(session.scalars(select(Category.color)))
-        else:
-            item.color = clean_color(color)
+    if color is None:
+        item.color = next_color(session.scalars(select(kind.model.color)))
+    else:
+        item.color = clean_color(color)
     session.add(item)
     session.flush()
     return item
@@ -147,7 +146,7 @@ def update_item(
         _check_unique(session, kind, name, own_id=item_id)
         item.name = name
         item.name_key = name.casefold()
-    if color is not None and kind is CATEGORIES:
+    if color is not None:
         item.color = clean_color(color)
     if archived is not None:
         item.archived = archived

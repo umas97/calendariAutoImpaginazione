@@ -44,7 +44,9 @@ def test_export_last_round_trip(api):
         "mode": "single_pdf",
         "formats": ["pdf", "png"],
         "dpi": 300,
+        "by": "category",
         "selections": [{"group_id": group, "category_ids": [category]}],
+        "category_selections": [{"category_id": category, "group_ids": [group]}],
         "output_dir": "/home/utente/Documenti/calendariAutoImpaginazione",
     }
     assert api.put("/api/settings/export.last", json={"value": value}).status_code == 200
@@ -59,7 +61,9 @@ def test_export_last_all_categories_is_null(api):
         "mode": "per_group",
         "formats": ["pdf"],
         "dpi": 200,
+        "by": "group",
         "selections": [{"group_id": group, "category_ids": None}],
+        "category_selections": [],
         "output_dir": None,
     }
     assert api.put("/api/settings/export.last", json={"value": value}).status_code == 200
@@ -84,6 +88,7 @@ def test_unknown_key_is_404(api):
         ("export.last", {"mode": "griglia"}),
         ("export.last", {"dpi": 72}),
         ("export.last", {"formats": ["docx"]}),
+        ("export.last", {"by": "luogo"}),
     ],
 )
 def test_invalid_value_is_422(api, key, value):
@@ -108,7 +113,11 @@ def test_vanished_ids_are_ignored_on_read(api):
                 "selections": [
                     {"group_id": kept, "category_ids": [category, 999]},
                     {"group_id": gone, "category_ids": [category]},
-                ]
+                ],
+                "category_selections": [
+                    {"category_id": category, "group_ids": [kept, gone]},
+                    {"category_id": 999, "group_ids": None},
+                ],
             }
         },
     )
@@ -117,6 +126,9 @@ def test_vanished_ids_are_ignored_on_read(api):
     settings = api.get("/api/settings").json()
     assert settings["calendar.filters"] == {"group_ids": [kept], "category_ids": [category]}
     assert settings["export.last"]["selections"] == [{"group_id": kept, "category_ids": [category]}]
+    assert settings["export.last"]["category_selections"] == [
+        {"category_id": category, "group_ids": [kept]}
+    ]
 
 
 def test_identity_rows_are_not_settings(api):

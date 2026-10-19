@@ -13,7 +13,8 @@ calendariAutoImpaginazione è un programma desktop per Linux con cui **una sola 
 le attività della parrocchia) tiene il calendario delle attività dei gruppi parrocchiali
 (classi di catechismo, cresimandi, giovanissimi, coro, oratorio…) e ne ricava **fogli A4
 pronti da distribuire**: un foglio per gruppo, con soltanto gli eventi che interessano a quel
-gruppo, in ordine cronologico, colorati per categoria.
+gruppo, in ordine cronologico, colorati per categoria (oppure un foglio per categoria, con gli
+eventi di quella categoria per i gruppi scelti, colorati per gruppo).
 
 Il programma si apre su un **calendario che riempie la finestra, posizionato sul mese
 corrente con la data di oggi evidenziata**. Qui si inseriscono gli eventi. Ogni evento
@@ -225,20 +226,31 @@ dall'export.
 |---|---|---|---|
 | `id` | ✓ | ✓ | intero |
 | `name` | ✓ | ✓ | 1–60 caratteri dopo `strip()`; spazi interni multipli ridotti a uno; **unico senza distinzione di maiuscole** (`casefold`) tra gli elementi dello stesso tipo, archiviati compresi |
-| `color` | — | ✓ | `#RRGGBB` (6 cifre esadecimali, salvato in maiuscolo) |
+| `color` | ✓ | ✓ | `#RRGGBB` (6 cifre esadecimali, salvato in maiuscolo) |
 | `position` | ✓ | ✓ | ordine scelto dall'utente; decide l'ordine in tutte le liste e nella legenda |
 | `archived` | ✓ | ✓ | booleano, default falso |
 
-I gruppi non hanno colore: il colore appartiene alle categorie.
+Il colore di un evento, nel calendario e nei fogli per gruppo, è quello delle sue categorie.
+Il colore dei gruppi serve **solo nei fogli per categoria** (§8.1, §8.3), dove barre e legenda
+seguono i gruppi (decisione dell'utente del 2026-10-19). Nel calendario i gruppi non mostrano
+il loro colore (né nei filtri né nel dialogo evento), per non far credere che colorino gli eventi.
 
-### 6.2 Colori delle categorie
+### 6.2 Colori di categorie e gruppi
 
 - Palette predefinita di 12 colori distinguibili e stampabili, assegnati in ordine al primo
-  colore **non ancora usato** da una categoria (archiviate comprese); se sono tutti usati si
-  riparte dal primo:
-  `#E63946` rosso · `#F4A261` arancio · `#E9C46A` ocra · `#43AA8B` verde · `#2A9D8F` verde
-  acqua · `#00A6ED` azzurro · `#277DA1` blu · `#577590` ardesia · `#9B5DE5` viola ·
-  `#F15BB5` rosa · `#8D6E63` marrone · `#6C757D` grigio.
+  colore **non ancora usato** da un elemento dello stesso tipo (archiviati compresi: gruppi e
+  categorie contano ciascuno per conto proprio); se sono tutti usati si prende **il meno usato**,
+  a parità il primo, così oltre il dodicesimo si riparte dal primo, poi dal secondo e così via. L'ordine alterna tinte lontane, così le prime categorie sono le più diverse
+  (CIEDE2000 ≥ 19 tra due qualsiasi dei primi sei, sia sulle barre sia sui numeri scuriti):
+  `#1976D2` blu · `#D32F2F` rosso · `#2E7D32` verde · `#F57C00` arancio · `#8E24AA` viola ·
+  `#00838F` ottanio · `#C2185B` magenta · `#6D4C41` marrone · `#FBC02D` giallo ·
+  `#283593` indaco · `#C0CA33` lime · `#757575` grigio.
+  (Decisione dell'utente del 2026-10-13: la prima palette, rosso · arancio · ocra · verde ·
+  verde acqua · …, metteva tinte vicine una dopo l'altra e in stampa le prime categorie si
+  confondevano. La migrazione `0003` dà i colori nuovi, in ordine di posizione, alle categorie
+  che avevano ancora un colore della prima palette; i colori liberi restano.)
+- La migrazione `0004` dà un colore ai gruppi esistenti: la palette in ordine di posizione
+  (archiviati compresi), dal primo dopo il dodicesimo.
 - L'utente può scegliere un colore della palette o uno libero (selettore colore).
 - Dove il colore colora **testo** su bianco (il numero del giorno negli export, §8.3), si usa
   `palette.text_color(hex)`: lo stesso tono scurito in passi di 5% di luminosità finché il
@@ -340,14 +352,22 @@ ExportRequest
   mode: "per_group" | "single_pdf" | "combined"
   formats: {"pdf", "png"} (almeno uno)
   dpi: 150 | 200 | 300                     # solo PNG, default 200
-  selections: [{group_id, category_ids: [..] (≥ 1)}]   # ≥ 1 gruppo
+  by: "group" | "category"                 # un foglio per gruppo o per categoria, default group
+  selections: [{group_id, category_ids: [..] (≥ 1)}]            # by = group: ≥ 1 gruppo
+  category_selections: [{category_id, group_ids: [..] (≥ 1)}]   # by = category: ≥ 1 categoria
+  multipage: [id]                          # gruppi (o categorie) su più pagine (§8.4)
   output_dir: path                         # sotto $HOME (§10.3)
 ```
 
+Con `by = category` i fogli sono **uno per categoria** (decisione dell'utente del 2026-10-19):
+il foglio «Ritiro» raccoglie i ritiri dei gruppi scelti per quella categoria. La modalità
+`per_group` vuol dire «un file per foglio» anche quando i fogli sono categorie; delle due liste
+conta solo quella indicata da `by`.
+
 | Modalità | Cosa produce | Pagine |
 |---|---|---|
-| **Un file per gruppo** (`per_group`) | per ogni gruppo un PDF e/o un PNG | **esattamente 1 per gruppo** |
-| **PDF unico per gruppi** (`single_pdf`) | un PDF con una pagina per gruppo, nell'ordine dei gruppi; con PNG attivo si ottiene in più un PNG per gruppo | 1 per gruppo |
+| **Un file per gruppo / categoria** (`per_group`) | per ogni gruppo (o categoria) un PDF e/o un PNG | **esattamente 1 per foglio** |
+| **PDF unico per gruppi / categorie** (`single_pdf`) | un PDF con una pagina per gruppo (o categoria), nell'ordine dei gruppi (o delle categorie); con PNG attivo si ottiene in più un PNG per foglio | 1 per foglio |
 | **Calendario completo** (`combined`) | un unico documento con gli eventi di tutti i gruppi selezionati | **anche più pagine**; PNG = un file per pagina |
 
 **Regola di inclusione** (identica in tutte le modalità): un evento entra nel foglio del gruppo
@@ -356,8 +376,14 @@ Nel **calendario completo** un evento entra se soddisfa la regola per almeno uno
 selezionati, e **compare una volta sola**; accanto al titolo si mostrano in piccolo i nomi dei
 suoi gruppi selezionati, nell'ordine dei gruppi (§8.3). Test 12.
 
-Un gruppo **senza eventi** nel periodo non produce file: la scheda Export lo segnala prima
-(«0 eventi») e il riepilogo finale lo elenca come «saltato: nessun evento».
+**Per categoria** la regola è speculare: un evento entra nel foglio della categoria C se C è tra
+le sue categorie **e** almeno uno dei suoi gruppi è tra quelli selezionati per C. Il calendario
+completo scelto per categoria prende gli eventi che soddisfano la regola per almeno una
+categoria selezionata: è lo stesso calendario completo che si otterrebbe scegliendo per gruppo,
+dando a ogni gruppo le categorie che lo hanno selezionato (colori e legenda per categoria).
+
+Un gruppo (o una categoria) **senza eventi** nel periodo non produce file: la scheda Export lo
+segnala prima («0 eventi») e il riepilogo finale lo elenca come «saltato: nessun evento».
 
 ### 8.2 Formattazione in italiano (`export/formatting.py`, test 13)
 
@@ -421,6 +447,13 @@ A4 verticale (210 × 297 mm), margini 14 mm, font Inter incluso.
   non ci stanno, al massimo 2 righe, poi ellissi.
 - Nel calendario completo, dopo il titolo e prima del luogo, i gruppi in piccolo grigio:
   `· Cresimandi, 5ª elementare`.
+- **Foglio per categoria**: titolo = nome della categoria. Barre, numeri dei giorni e legenda
+  usano i **colori dei gruppi** al posto di quelli delle categorie: la barra è divisa in un
+  segmento per ciascuno dei gruppi selezionati dell'evento, nell'ordine dei gruppi; il numero
+  prende `text_color` del primo; la legenda elenca i gruppi selezionati che compaiono in almeno
+  un evento, nell'ordine dei gruppi. Ogni riga riporta anche i nomi di quei gruppi, come nel
+  calendario completo (`Ritiro di Avvento · Cresimandi, Coro · Oratorio`), così il foglio si
+  legge anche stampato in bianco e nero.
 - **Piè di pagina**: «aggiornato al GG/MM/AAAA» in piccolo grigio a destra; nel calendario
   completo anche «pagina N di M».
 - Nessuno sfondo pieno, nessuna ombra: bianco, testo quasi nero (`#1F2328`), grigio
@@ -442,7 +475,7 @@ in proporzione al corpo del titolo.
 
 Se nemmeno 7.5 pt su due colonne basta, il foglio di quel gruppo **non viene prodotto** e
 l'utente vede: «Cresimandi: 112 eventi non entrano in un foglio A4. Riduci il periodo o le
-categorie.», con il pulsante **«Esporta su più pagine»** che rifà quel gruppo come calendario
+categorie.» (per un foglio di categoria: «… Riduci il periodo o i gruppi.»), con il pulsante **«Esporta su più pagine»** che rifà quel gruppo come calendario
 a più pagine (corpo 10 pt). Gli altri gruppi vengono esportati normalmente.
 
 Il calendario completo non usa l'adattamento: corpo fisso **10 pt**, una colonna, più pagine.
@@ -468,10 +501,11 @@ Dentro `<cartella scelta>/Export AAAA-MM-GG HH-MM/`:
 | Modalità | Nome |
 |---|---|
 | per gruppo | `<Gruppo> <from>_<to>.pdf` / `.png` |
-| PDF unico | `Calendari per gruppo <from>_<to>.pdf` (+ PNG per gruppo come sopra) |
+| per categoria | `<Categoria> <from>_<to>.pdf` / `.png` |
+| PDF unico | `Calendari per gruppo <from>_<to>.pdf` (per categoria: `Calendari per categoria …`; + PNG per foglio come sopra) |
 | completo | `Calendario completo <from>_<to>.pdf`; PNG: `… p1.png`, `… p2.png` |
 
-Date ISO (`2026-10-01`). Dal nome del gruppo si tolgono `/ \ : * ? " < > |` e i caratteri di
+Date ISO (`2026-10-01`). Dal nome del gruppo (o della categoria) si tolgono `/ \ : * ? " < > |` e i caratteri di
 controllo, si comprimono gli spazi, si tronca a 80 caratteri. Collisioni → ` (2)`, ` (3)`.
 
 ### 8.7 Esecuzione
@@ -479,7 +513,7 @@ controllo, si comprimono gli spazi, si tronca a 80 caratteri. Collisioni → ` (
 - `POST /api/export` valida la richiesta, crea un job in memoria e lo esegue in **un thread**
   (un export alla volta; una seconda richiesta durante un export risponde 409 «C'è già un
   export in corso»). `GET /api/export/jobs/{id}` restituisce stato, `done/total` fogli, file
-  prodotti, gruppi saltati con il motivo.
+  prodotti, fogli saltati con il motivo.
 - Un errore su un gruppo **non ferma** gli altri; il riepilogo li mostra tutti.
 - `POST /api/export/preview` (stessa richiesta, senza `output_dir`) restituisce per ogni
   foglio: numero di eventi, impaginazione scelta (`{columns, font_pt}` o «non entra»), e le
@@ -510,7 +544,9 @@ aggiungere in `window.py`); F11 = schermo intero.
 **Calendario** (`/`)
 - Il calendario occupa tutto lo spazio sotto la barra, senza scorrimento della pagina.
 - All'apertura: **vista Mese sul mese corrente, oggi evidenziato**. Barra del calendario:
-  `‹` `Oggi` `›`, titolo («ottobre 2026»), selettore vista **Mese / Settimana / Elenco**,
+  `‹` `Oggi` `›`, titolo («ottobre 2026»; un clic apre l'anno con i 12 mesi, `‹` `›` cambiano
+  anno e un clic su un mese ci va: in Settimana, alla settimana che contiene il primo del mese),
+  selettore vista **Mese / Settimana / Elenco**,
   filtri **Gruppi** e **Categorie** (selezione multipla, «tutti» di default), **+ Nuovo
   evento**.
 - Eventi colorati con la categoria principale; se ne hanno altre, piccoli pallini dei loro
@@ -539,8 +575,9 @@ aggiungere in `window.py`); F11 = schermo intero.
 
 **Gruppi e categorie** (`/gruppi`)
 - Due colonne affiancate, Gruppi e Categorie. Ogni riga: maniglia di trascinamento, nome
-  (modificabile in linea), colore (solo categorie, con palette + selettore libero), numero di
-  eventi, menu con Archivia/Ripristina ed Elimina (§6.3). In fondo «+ Aggiungi».
+  (modificabile in linea), colore (palette + selettore libero; per i gruppi serve ai fogli per
+  categoria), numero di eventi, menu con Archivia/Ripristina ed Elimina (§6.3). In fondo
+  «+ Aggiungi».
 - Interruttore «Mostra archiviati».
 
 **Export** (`/export`)
@@ -548,18 +585,26 @@ aggiungere in `window.py`); F11 = schermo intero.
 - **Periodo**: «dal» / «al» + scorciatoie **Questo mese**, **Prossimo mese**, **Prossimi 3
   mesi**, **Anno pastorale** (1 settembre – 30 giugno che contiene oggi; in luglio e agosto
   quello che inizia a settembre).
-- **Modalità**: Un file per gruppo · PDF unico per gruppi · Calendario completo.
+- **Modalità**: Un file per gruppo · PDF unico per gruppi · Calendario completo (con «Un foglio
+  per: Categoria»: Un file per categoria · PDF unico per categorie · Calendario completo).
 - **Formato**: PDF ☑ PNG ☐ (almeno uno) e, con PNG, la risoluzione (150 schermo / 200 /
   300 stampa).
-- **Gruppi**: elenco con casella di spunta e numero di eventi nel periodo (aggiornato al
-  volo); ogni gruppo si espande e mostra le categorie come chip colorati, **tutte attive di
-  default**, con «Tutte / Nessuna». «Seleziona tutti i gruppi».
+- **Un foglio per: Gruppo · Categoria** (interruttore in cima all'elenco; con il calendario
+  completo si legge «Scegli per»). Le due scelte si ricordano entrambe: tornando all'altra la si
+  ritrova com'era.
+- **Gruppi** (con «Gruppo»): elenco con casella di spunta e numero di eventi nel periodo
+  (aggiornato al volo); ogni gruppo si espande e mostra le categorie come chip colorati, **tutte
+  attive di default**, con «Tutte / Nessuna». «Seleziona tutti i gruppi».
+- **Categorie** (con «Categoria»): lo specchio: elenco delle categorie con spunta e numero di
+  eventi; ognuna si espande e mostra i gruppi come chip col loro colore, **tutti attivi di
+  default**, con «Tutti / Nessuno». «Seleziona tutte le categorie». La prima volta tutte le
+  categorie attive sono spuntate.
 - **Intestazione**: nome della parrocchia e logo (carica / rimuovi, con miniatura).
 - **Cartella**: percorso + **Sfoglia…** (selettore dentro l'app, §10.3), default
   `~/Documenti/calendariAutoImpaginazione/` (creata al primo export se non esiste).
-- **Esporta**: barra di avanzamento per fogli, poi riepilogo (file prodotti, gruppi saltati
+- **Esporta**: barra di avanzamento per fogli, poi riepilogo (file prodotti, fogli saltati
   con il motivo) e **Apri cartella** (`gio open`, ripiego `xdg-open`).
-- **Anteprima**: le pagine di ogni foglio, navigabili per gruppo; per ciascuno un'etichetta
+- **Anteprima**: le pagine di ogni foglio, navigabili per gruppo (o categoria); per ciascuno un'etichetta
   «1 colonna, 10 pt» / «2 colonne, 8 pt» / «non entra in un A4» in rosso. Si aggiorna
   400 ms dopo l'ultima modifica.
 
@@ -603,7 +648,7 @@ aggiungere in `window.py`); F11 = schermo intero.
 |---|---|
 | `calendar.view` | `month` / `week` / `list` |
 | `calendar.filters` | id di gruppi e categorie selezionati (id spariti ignorati) |
-| `export.last` | periodo, modalità, formati, dpi, gruppi e categorie per gruppo, cartella |
+| `export.last` | periodo, modalità, formati, dpi, `by`, gruppi con le loro categorie, categorie con i loro gruppi (`null` = tutti), cartella |
 | `parish.name` | nome della parrocchia |
 
 Il logo sta nella tabella `asset` (chiave `parish.logo`).
@@ -696,8 +741,9 @@ Numerati: i commenti e STATO.md li citano («test 7»).
 1. Database creato da zero con le migrazioni; un secondo avvio non cambia nulla.
 2. Gruppi e categorie: nome ripulito, unicità senza maiuscole (anche contro archiviati) → 409,
    limiti di lunghezza → 422, riordino.
-3. Colori: formato `#RRGGBB` validato e salvato in maiuscolo; assegnazione automatica del
-   primo colore libero della palette, poi ripartenza.
+3. Colori: formato `#RRGGBB` validato e salvato in maiuscolo, per categorie e gruppi;
+   assegnazione automatica del primo colore libero della palette (ogni tipo per conto proprio),
+   poi ripartenza dal meno usato; la migrazione `0004` colora i gruppi esistenti in ordine.
 4. Validazione evento: ogni riga della tabella di §7.2.
 5. Gruppi/categorie obbligatori, id inesistenti, archiviati vietati sui nuovi eventi e
    ammessi in modifica se già presenti.
@@ -715,6 +761,8 @@ Numerati: i commenti e STATO.md li citano («test 7»).
 12. Selezione per l'export: regola gruppo ∧ categoria; categorie non selezionate escluse da
     barre e legenda; calendario completo senza duplicati e con le etichette dei gruppi;
     gruppi senza eventi saltati; le note interne non compaiono nei `Sheet` né nel testo del PDF.
+    Per categoria: regola categoria ∧ gruppo, barre e legenda coi colori dei gruppi, nomi dei
+    gruppi sulle righe, calendario completo uguale a quello scelto per gruppo, conteggi.
 13. Formattazione in italiano: ogni riga delle tabelle di §8.2, intestazioni di periodo,
     anno pastorale in ogni mese dell'anno.
 14. Adattamento: 0 eventi (saltato), 1, 30 (una colonna, ≥ 9 pt), 80 (due colonne, ≥ 7.5 pt),
@@ -724,8 +772,8 @@ Numerati: i commenti e STATO.md li citano («test 7»).
     luoghi e orari; metadati `Title`.
 16. PNG: dimensioni esatte a 150/200/300 dpi, sfondo opaco; calendario completo su più
     pagine → un PNG per pagina.
-17. Modalità: `per_group` → un file per gruppo; `single_pdf` → pagine = gruppi; `combined` →
-    più pagine con «pagina N di M».
+17. Modalità: `per_group` → un file per gruppo (o per categoria, con i nomi delle categorie);
+    `single_pdf` → pagine = fogli; `combined` → più pagine con «pagina N di M».
 18. Nomi dei file: caratteri vietati tolti, troncamento, collisioni ` (2)`; un file
     preesistente con lo stesso nome resta intatto (hash prima/dopo).
 19. Nessuna rete: export completo con logo SVG che punta a `https://…` e `file:///etc/…`
@@ -733,7 +781,9 @@ Numerati: i commenti e STATO.md li citano («test 7»).
 20. Cartelle: percorsi fuori da `$HOME`, `..` e symlink verso l'esterno → 403; elenco delle
     sole sottocartelle; nascoste solo con `hidden=1`.
 21. Contrasto: `text_color` porta ogni colore della palette (e un giallo chiaro libero) a
-    ≥ 4.5:1 sul bianco; un colore già scuro resta uguale.
+    ≥ 4.5:1 sul bianco; un colore già scuro resta uguale. I colori della palette restano
+    lontani (CIE76 ΔE ≥ 30 tra i primi sei, ≥ 20 tra tutti, barre e numeri); la migrazione
+    `0003` sposta sulla palette nuova solo le categorie con un colore della prima.
 22. Impostazioni: lettura/scrittura delle chiavi di §10.2, chiave sconosciuta → 404, valore
     non valido → 422, id spariti ignorati in lettura.
 23. Backup e ripristino: il backup è un database valido con gli stessi dati; il ripristino

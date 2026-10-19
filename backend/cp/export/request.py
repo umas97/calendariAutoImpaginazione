@@ -19,7 +19,11 @@ from ..domain.errors import FieldError, InvalidFields
 #: The longest period, both ends counted (SPEC §8.1).
 MAX_PERIOD_DAYS = 400
 
+#: ``per_group`` is one file per sheet, whether the sheets are groups or categories.
 Mode = Literal["per_group", "single_pdf", "combined"]
+#: What a sheet is for: a group (its events, filtered by category) or a category
+#: (its events, filtered by group).
+By = Literal["group", "category"]
 Format = Literal["pdf", "png"]
 
 
@@ -35,16 +39,26 @@ class GroupSelection(BaseModel):
     category_ids: list[int] = Field(default_factory=list)
 
 
+class CategorySelection(BaseModel):
+    category_id: int
+    group_ids: list[int] = Field(default_factory=list)
+
+
 class ExportRequest(BaseModel):
     period: Period
     mode: Mode = "per_group"
     formats: list[Format] = Field(default_factory=lambda: ["pdf"])
     dpi: Literal[150, 200, 300] = 200
+    by: By = "group"
+    #: The sheets when ``by`` is ``group``; ignored otherwise.
     selections: list[GroupSelection] = Field(default_factory=list)
+    #: The sheets when ``by`` is ``category``; ignored otherwise.
+    category_selections: list[CategorySelection] = Field(default_factory=list)
     #: Absent only for a preview.
     output_dir: str | None = None
-    #: Groups to lay out over several pages instead of one sheet: the answer to
-    #: "non entra in un foglio A4" ("Esporta su più pagine", SPEC §8.4).
+    #: Groups (or categories, with ``by`` = ``category``) to lay out over several
+    #: pages instead of one sheet: the answer to "non entra in un foglio A4"
+    #: ("Esporta su più pagine", SPEC §8.4).
     multipage: list[int] = Field(default_factory=list)
 
 
@@ -52,7 +66,8 @@ def check_request(request: ExportRequest, *, needs_output: bool) -> ExportReques
     """Apply the rules of SPEC §8.1 that need no database; return a cleaned copy.
 
     A group chosen twice counts once (the first choice wins), and so does a
-    category chosen twice for the same group.
+    category chosen twice for the same group; the same, the other way round,
+    for categories. Only the selections ``by`` asks for are kept.
     """
     problems: list[FieldError] = []
     first, last = request.period.first, request.period.last
@@ -65,16 +80,28 @@ def check_request(request: ExportRequest, *, needs_output: bool) -> ExportReques
     formats = list(dict.fromkeys(request.formats))
     if not formats:
         problems.append(FieldError("formats", "Scegli almeno un formato: PDF o PNG."))
-    seen: set[int] = set()
-    selections = []
-    for selection in request.selections:
-        if selection.group_id in seen:
-            continue
-        seen.add(selection.group_id)
-        categories = list(dict.fromkeys(selection.category_ids))
-        selections.append(GroupSelection(group_id=selection.group_id, category_ids=categories))
-    if not selections:
-        problems.append(FieldError("selections", "Scegli almeno un gruppo."))
+    selections: list[GroupSelection] = []
+    category_selections: list[CategorySelection] = []
+    if request.by == "group":
+        for selection in request.selections:
+            if all(s.group_id != selection.group_id for s in selections):
+                categories = list(dict.fromkeys(selection.category_ids))
+                selections.append(
+                    GroupSelection(group_id=selection.group_id, category_ids=categories)
+                )
+        seen = {s.group_id for s in selections}
+        if not selections:
+            problems.append(FieldError("selections", "Scegli almeno un gruppo."))
+    else:
+        for chosen in request.category_selections:
+            if all(s.category_id != chosen.category_id for s in category_selections):
+                groups = list(dict.fromkeys(chosen.group_ids))
+                category_selections.append(
+                    CategorySelection(category_id=chosen.category_id, group_ids=groups)
+                )
+        seen = {s.category_id for s in category_selections}
+        if not category_selections:
+            problems.append(FieldError("category_selections", "Scegli almeno una categoria."))
     if needs_output and not (request.output_dir or "").strip():
         problems.append(FieldError("output_dir", "Scegli la cartella in cui salvare."))
     if problems:
@@ -83,6 +110,7 @@ def check_request(request: ExportRequest, *, needs_output: bool) -> ExportReques
         update={
             "formats": formats,
             "selections": selections,
+            "category_selections": category_selections,
             "multipage": [g for g in dict.fromkeys(request.multipage) if g in seen],
         }
     )

@@ -1,7 +1,7 @@
 // calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// A category's colour (SPEC §6.2): the twelve palette colours first, then any
+// A group's or category's colour (SPEC §6.2): the twelve palette colours first, then any
 // colour through the system picker. The palette comes from the server, which
 // also assigns it, so there is one list. The free picker reports every move of
 // the cursor; only the final `change` is saved.

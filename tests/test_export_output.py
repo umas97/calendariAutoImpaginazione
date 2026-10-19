@@ -34,11 +34,14 @@ def test_clean_name_truncates_to_80():
 
 def test_names_by_mode():
     first, last = D(2026, 10, 1), D(2027, 6, 30)
-    assert output.group_file("Cresimandi", first, last, "pdf") == (
+    assert output.sheet_file("Cresimandi", first, last, "pdf") == (
         "Cresimandi 2026-10-01_2027-06-30.pdf"
     )
-    assert output.group_file("A/B", first, last, "png", 2) == "AB 2026-10-01_2027-06-30 p2.png"
+    assert output.sheet_file("A/B", first, last, "png", 2) == "AB 2026-10-01_2027-06-30 p2.png"
     assert output.single_pdf_file(first, last) == "Calendari per gruppo 2026-10-01_2027-06-30.pdf"
+    assert output.single_pdf_file(first, last, "category") == (
+        "Calendari per categoria 2026-10-01_2027-06-30.pdf"
+    )
     assert output.combined_file(first, last, "png", 1) == (
         "Calendario completo 2026-10-01_2027-06-30 p1.png"
     )

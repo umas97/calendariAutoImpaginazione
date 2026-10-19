@@ -17,37 +17,27 @@ from pydantic import BaseModel, Field
 # --- groups and categories ---------------------------------------------------
 
 
-class GroupIn(BaseModel):
+class ItemIn(BaseModel):
     name: str
+    #: Omitted: the first palette colour no item of the same kind uses yet.
+    color: str | None = None
 
 
-class GroupPatch(BaseModel):
+class ItemPatch(BaseModel):
     name: str | None = None
+    color: str | None = None
     archived: bool | None = None
 
 
-class GroupOut(BaseModel):
+class ItemOut(BaseModel):
+    """A group or a category."""
+
     id: int
     name: str
+    color: str
     position: int
     archived: bool
     event_count: int
-
-
-class CategoryIn(BaseModel):
-    name: str
-    #: Omitted: the first palette colour no category uses yet.
-    color: str | None = None
-
-
-class CategoryPatch(BaseModel):
-    name: str | None = None
-    color: str | None = None
-    archived: bool | None = None
-
-
-class CategoryOut(GroupOut):
-    color: str
 
 
 class ReorderIn(BaseModel):

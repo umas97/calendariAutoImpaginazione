@@ -16,6 +16,8 @@ import {
   countsRequest,
   exportRequest,
   initialForm,
+  lists,
+  multipageRequest,
   sheetRequests,
   toLast,
   type ExportForm,
@@ -28,7 +30,7 @@ import { useItems } from '../lib/taxonomy'
 import { plural, t } from '../i18n/it'
 import { buttonClass } from '../components/Dialog'
 import { FormatChoice, ModeChoice } from '../components/ExportFormatOptions'
-import { ExportGroups } from '../components/ExportGroups'
+import { ExportSheets } from '../components/ExportSheets'
 import { ExportJobDialog } from '../components/ExportJobDialog'
 import { ExportPeriod } from '../components/ExportPeriod'
 import { ExportPreview } from '../components/ExportPreview'
@@ -77,7 +79,7 @@ type ScreenProps = {
 
 function ExportScreen({ settings, groups, categories, options, parish }: ScreenProps) {
   const [form, setForm] = useState<ExportForm>(() =>
-    initialForm(settings['export.last'], groups, options.shortcuts.pastoral_year),
+    initialForm(settings['export.last'], groups, categories, options.shortcuts.pastoral_year),
   )
   const [showArchived, setShowArchived] = useState(false)
   const visible = useMemo(
@@ -107,7 +109,7 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
     () =>
       form.mode === 'combined'
         ? requests.map(() => ({ id: 'combined' as SheetId, title: t('preview.combined') }))
-        : checkedVisible(form, visible).map((g) => ({ id: g.id as SheetId, title: g.name })),
+        : checkedVisible(form, visible).map((r) => ({ id: r.id as SheetId, title: r.name })),
     [form, visible, requests],
   )
   const [focus, setFocus] = useState<SheetId | null>(null)
@@ -125,20 +127,14 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
   const stop = blocker(form, visible)
   const serverFields = { ...(counts.error as ApiError | null)?.fields, ...job.error?.fields }
   const periodError = serverFields['period.to'] ?? serverFields['period.from']
-  const withEvents = checkedVisible(form, visible).filter((g) => (counts.data?.groups[String(g.id)] ?? 1) > 0)
-  const misfits = form.mode === 'combined' ? 0 : withEvents.filter((g) => tooBig(g.id)).length
+  const withEvents = checkedVisible(form, visible).filter((r) => (counts.data?.sheets[String(r.id)] ?? 1) > 0)
+  const misfits = form.mode === 'combined' ? 0 : withEvents.filter((r) => tooBig(r.id)).length
   const sheetCount = form.mode === 'combined' ? Number((counts.data?.combined ?? 0) > 0) : withEvents.length - misfits
 
   const start = () => void job.start(exportRequest(form, visible, options.default_dir))
-  const redoOnSeveralPages = (ids: number[]) => {
-    const body = exportRequest(form, visible, options.default_dir)
-    void job.start({
-      ...body,
-      mode: 'per_group',
-      selections: body.selections.filter((s) => ids.includes(s.group_id)),
-      multipage: ids,
-    })
-  }
+  const redoOnSeveralPages = (ids: number[]) =>
+    void job.start(multipageRequest(exportRequest(form, visible, options.default_dir), ids))
+  const { rows, chips } = lists(form, visible)
 
   return (
     <div className="flex h-full">
@@ -153,7 +149,7 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
             />
           </Section>
           <Section title={t('export.mode.title')}>
-            <ModeChoice mode={form.mode} onChange={(mode) => update({ mode })} />
+            <ModeChoice mode={form.mode} by={form.by} onChange={(mode) => update({ mode })} />
           </Section>
           <Section title={t('export.format.title')}>
             <FormatChoice
@@ -164,7 +160,7 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
             />
           </Section>
           <Section
-            title={t('export.groups.title')}
+            title={t(`export.${form.by}.title`)}
             aside={
               <label className="flex cursor-pointer items-center gap-2 text-xs text-ink-200">
                 <input
@@ -173,15 +169,15 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
                   onChange={(event) => setShowArchived(event.target.checked)}
                   className="h-3.5 w-3.5 accent-[var(--color-accent)]"
                 />
-                {t('export.groups.showArchived')}
+                {t('export.rows.showArchived')}
               </label>
             }
           >
-            <ExportGroups
+            <ExportSheets
               form={form}
               onChange={setForm}
-              groups={visible.groups}
-              categories={visible.categories}
+              rows={rows}
+              chips={chips}
               counts={counts.data}
               countsStale={counts.isPlaceholderData || counts.isFetching}
               tooBig={tooBig}
@@ -209,7 +205,7 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
               {job.starting ? t('export.starting') : t('export.go')}
             </button>
             <span className="text-sm text-ink-300">
-              {stop ? t(`export.blocked.${stop}`) : counts.data ? plural('export.sheets', sheetCount) : ''}
+              {stop ? t(stop === 'period' ? 'export.blocked.period' : `export.blocked.${form.by}.${stop}`) : counts.data ? plural('export.sheets', sheetCount) : ''}
               {!stop && misfits ? <span className="block text-red-400">{plural('export.sheets.tooBig', misfits)}</span> : null}
             </span>
           </div>
@@ -223,6 +219,7 @@ function ExportScreen({ settings, groups, categories, options, parish }: ScreenP
           onFocus={setFocus}
           sheet={preview.sheet}
           waiting={preview.waiting}
+          by={form.by}
           multipage={form.multipage}
           onMultipage={setMultipage}
         />

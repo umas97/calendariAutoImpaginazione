@@ -27,7 +27,8 @@ export type SheetPreview = {
   loading: boolean
 }
 
-type Wanted = { id: SheetId; key: string; body: ExportRequest }
+/** `slot` names the sheet across choices: a group and a category may share an id. */
+type Wanted = { id: SheetId; slot: string; key: string; body: ExportRequest }
 
 const DEBOUNCE_MS = 400
 /** Quiet time after the last change or sheet shown before the background work starts. */
@@ -47,7 +48,7 @@ function release(result: SheetResult | undefined) {
 
 class PreviewQueue {
   private results = new Map<string, SheetResult>()
-  private lastKey = new Map<SheetId, string>()
+  private lastKey = new Map<string, string>()
   private wanted: Wanted[] = []
   private focus: SheetId | null = null
   private running = new Set<string>()
@@ -108,8 +109,8 @@ class PreviewQueue {
     this.lastKey.clear()
   }
 
-  sheet(id: SheetId, key: string | undefined): SheetPreview {
-    const last = this.lastKey.get(id)
+  sheet(slot: string, key: string | undefined): SheetPreview {
+    const last = this.lastKey.get(slot)
     return {
       current: (key && this.results.get(key)) || null,
       shown: (last && this.results.get(last)) || null,
@@ -157,7 +158,7 @@ class PreviewQueue {
     if (result && this.alive) {
       release(this.results.get(wanted.key))
       this.results.set(wanted.key, result)
-      this.lastKey.set(wanted.id, wanted.key)
+      this.lastKey.set(wanted.slot, wanted.key)
     } else {
       release(result ?? undefined)
     }
@@ -176,6 +177,10 @@ class PreviewQueue {
   }
 }
 
+function slotOf(body: Pick<ExportRequest, 'by'>, id: SheetId): string {
+  return `${body.by}:${id}`
+}
+
 /**
  * Previews for `requests`, one per sheet. `extra` is part of every key: what
  * changes the sheets without being in the request (the parish name and logo).
@@ -190,7 +195,8 @@ export function usePreview(
   useSyncExternalStore(queue.subscribe, queue.getVersion)
 
   const wanted = useMemo(
-    () => requests.map((r) => ({ ...r, key: `${JSON.stringify(r.body)}|${extra}` })),
+    () =>
+      requests.map((r) => ({ ...r, slot: slotOf(r.body, r.id), key: `${JSON.stringify(r.body)}|${extra}` })),
     [requests, extra],
   )
   const signature = wanted.map((w) => w.key).join('\n')
@@ -208,8 +214,9 @@ export function usePreview(
   useEffect(() => queue.setPaused(paused), [queue, paused])
 
   const keys = new Map(wanted.map((w) => [w.id, w.key]))
+  const by = requests[0]?.body.by ?? 'group'
   return {
-    sheet: (id: SheetId) => queue.sheet(id, keys.get(id)),
+    sheet: (id: SheetId) => queue.sheet(slotOf({ by }, id), keys.get(id)),
     /** Settings changed and the 400 ms have not passed yet. */
     waiting: signature !== queue.applied,
   }

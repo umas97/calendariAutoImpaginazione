@@ -81,8 +81,8 @@ def test_per_group_one_file_per_group_and_the_empty_one_skipped(data, xdg_home):
             assert pages(job.folder / name) == 1
     assert job.skipped == [
         {
-            "group_id": data[0][2],
-            "group": "Giovanissimi",
+            "sheet_id": data[0][2],
+            "title": "Giovanissimi",
             "reason": "empty",
             "message": "saltato: nessun evento",
             "events": 0,
@@ -99,6 +99,24 @@ def test_single_pdf_one_page_per_group(data, xdg_home):
     first, second = (p.get_textpage().get_text_range() for p in pdfium.PdfDocument(merged))
     assert "Cresimandi" in first and "5ª elementare" in second
     assert pdfium.PdfDocument(merged).get_metadata_dict()["Title"] == "Calendari per gruppo"
+
+
+def test_sheets_per_category_are_named_after_the_categories(data, xdg_home):
+    groups, categories = data
+    chosen = [{"category_id": c, "group_ids": groups[:2]} for c in categories]
+    job = export(data, xdg_home, by="category", category_selections=chosen)
+    assert job.status == "done" and job.total == len(samples.CATEGORIES)
+    skipped = {item["title"] for item in job.skipped}
+    made = [name for name in samples.CATEGORIES if name not in skipped]
+    assert made and sorted(job.files) == sorted(f"{name} {SPAN}.pdf" for name in made)
+    first = text(job.folder / job.files[0])
+    assert "Cresimandi" in first or "5ª elementare" in first  # rows and legend name the groups
+
+    merged = export(data, xdg_home, mode="single_pdf", by="category", category_selections=chosen)
+    assert merged.files == [f"Calendari per categoria {SPAN}.pdf"]
+    document = pdfium.PdfDocument(merged.folder / merged.files[0])
+    assert len(document) == len(made)
+    assert document.get_metadata_dict()["Title"] == "Calendari per categoria"
 
 
 def test_combined_on_several_pages(api, xdg_home):
@@ -230,7 +248,7 @@ def test_api_counts_and_options(api, data):
         },
     )
     assert response.json() == {
-        "groups": {str(groups[0]): 4, str(groups[1]): 6, str(groups[2]): 0},
+        "sheets": {str(groups[0]): 4, str(groups[1]): 6, str(groups[2]): 0},
         "combined": 10,
     }
     options = api.get("/api/export/options").json()
@@ -260,7 +278,7 @@ def test_api_counts_for_unticked_groups_and_no_categories(api, data):
     )
     assert response.status_code == 200, response.text
     assert response.json() == {
-        "groups": {str(groups[0]): 4, str(groups[1]): 6, str(groups[2]): 0},
+        "sheets": {str(groups[0]): 4, str(groups[1]): 6, str(groups[2]): 0},
         "combined": 4,
     }
     nothing = api.post(
@@ -270,7 +288,7 @@ def test_api_counts_for_unticked_groups_and_no_categories(api, data):
             "selections": [{"group_id": groups[0], "category_ids": []}],
         },
     )
-    assert nothing.json() == {"groups": {str(groups[0]): 0}, "combined": 0}
+    assert nothing.json() == {"sheets": {str(groups[0]): 0}, "combined": 0}
 
 
 def test_api_preview(api, data):

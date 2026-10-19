@@ -62,12 +62,10 @@ export function TaxonomyRow(props: Props) {
         <span aria-hidden>⠿</span>
       </button>
 
-      {item.color !== undefined ? (
-        <ColorPicker
-          value={item.color}
-          onChange={(color) => patch({ color }).catch((err: Error) => props.onError(err.message))}
-        />
-      ) : null}
+      <ColorPicker
+        value={item.color}
+        onChange={(color) => patch({ color }).catch((err: Error) => props.onError(err.message))}
+      />
 
       <InlineName
         value={item.name}

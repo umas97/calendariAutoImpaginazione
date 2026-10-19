@@ -126,7 +126,7 @@ def add_events(session: Session, items: list[EventIn]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m cp.export.samples",
-        description="Scrive i fogli di prova (10, 30, 80 eventi e calendario completo).",
+        description="Fogli di prova: 10, 30, 80 eventi, uno per categoria, calendario completo.",
     )
     parser.add_argument("cartella", type=Path, help="dove scrivere (sotto la home)")
     parser.add_argument("--parrocchia", default="Parrocchia San Giovanni Battista")
@@ -153,13 +153,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
         formats = ["pdf", "png"] if args.png else ["pdf"]
         selections = [{"group_id": g, "category_ids": categories} for g in groups[:3]]
-        for mode in ("per_group", "combined"):
+        per_category = [{"category_id": c, "group_ids": groups[:3]} for c in categories]
+        for mode, by in (("per_group", "group"), ("per_group", "category"), ("combined", "group")):
             request = ExportRequest.model_validate(
                 {
                     "period": {"from": first, "to": last},
                     "mode": mode,
                     "formats": formats,
+                    "by": by,
                     "selections": selections,
+                    "category_selections": per_category,
                     "output_dir": str(args.cartella.resolve()),
                 }
             )
@@ -167,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
             for name in job.files:
                 print(name)
             for item in job.skipped:
-                print(f"{item['group']}: {item['message']}", file=sys.stderr)
+                print(f"{item['title']}: {item['message']}", file=sys.stderr)
     return 0
 
 

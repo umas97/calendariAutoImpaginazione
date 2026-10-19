@@ -83,7 +83,7 @@ class PreviewStore:
 
     def _sheet(self, generation: int, sheet: Sheet, composer: Any) -> dict[str, Any]:
         item: dict[str, Any] = {
-            "group_id": sheet.group_id,
+            "sheet_id": sheet.subject_id,
             "title": sheet.title,
             "event_count": sheet.event_count,
             "layout": None,

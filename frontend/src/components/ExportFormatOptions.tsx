@@ -4,14 +4,16 @@
 // Mode and format of the export (SPEC §8.1, §9.1): three modes; PDF and/or PNG,
 // never neither -- the last ticked box cannot be unticked -- and the PNG
 // resolution only when PNG is on.
-import type { Dpi, ExportFormat, ExportMode } from '../lib/api'
+import type { Dpi, ExportBy, ExportFormat, ExportMode } from '../lib/api'
 import { t } from '../i18n/it'
 
 const MODES: ExportMode[] = ['per_group', 'single_pdf', 'combined']
 const FORMATS: ExportFormat[] = ['pdf', 'png']
 const DPIS: Dpi[] = [150, 200, 300]
 
-export function ModeChoice({ mode, onChange }: { mode: ExportMode; onChange: (mode: ExportMode) => void }) {
+type ModeProps = { mode: ExportMode; by: ExportBy; onChange: (mode: ExportMode) => void }
+
+export function ModeChoice({ mode, by, onChange }: ModeProps) {
   return (
     <div role="radiogroup" aria-label={t('export.mode.title')} className="space-y-1">
       {MODES.map((each) => (
@@ -24,8 +26,8 @@ export function ModeChoice({ mode, onChange }: { mode: ExportMode; onChange: (mo
             className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
           />
           <span>
-            <span className="block text-sm text-ink-50">{t(`export.mode.${each}`)}</span>
-            <span className="block text-xs text-ink-300">{t(`export.mode.${each}.hint`)}</span>
+            <span className="block text-sm text-ink-50">{t(`export.mode.${by}.${each}`)}</span>
+            <span className="block text-xs text-ink-300">{t(`export.mode.${by}.${each}.hint`)}</span>
           </span>
         </label>
       ))}

@@ -59,6 +59,7 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
   const saveView = useSaveSetting('calendar.view')
   const saveFilters = useSaveSetting('calendar.filters')
   const [title, setTitle] = useState('')
+  const [current, setCurrent] = useState(() => lastDate ?? today())
   const [editing, setEditing] = useState<Editing | null>(null)
   const [duplicating, setDuplicating] = useState<CalendarEvent | null>(null)
   const [hover, setHover] = useState<Hover | null>(null)
@@ -113,6 +114,7 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
     onDatesSet: (info: DatesSetArg) => {
       const { currentStart, activeStart, activeEnd, type } = info.view
       lastDate = isoOf(currentStart)
+      setCurrent(lastDate)
       setTitle(
         type === FC_VIEW.week
           ? rangeTitle(isoOf(activeStart), addDays(isoOf(activeEnd), -1))
@@ -176,6 +178,8 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
     <div className="flex h-full flex-col">
       <CalendarToolbar
         title={title}
+        current={current}
+        onJump={(first) => api()?.gotoDate(first)}
         view={view}
         onView={changeView}
         onPrev={() => api()?.prev()}

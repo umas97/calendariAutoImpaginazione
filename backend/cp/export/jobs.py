@@ -4,7 +4,7 @@
 
 :func:`run_export` does the work and can be called directly (the sample
 command does); :class:`ExportRunner` runs it in the background. A failure on
-one group never stops the others: it is logged and listed among the skipped.
+one sheet never stops the others: it is logged and listed among the skipped.
 Closing the program lets a running export finish (30 s at most), then asks it
 to stop between two sheets, so no file is ever left half-written.
 """
@@ -33,11 +33,12 @@ _log = logging.getLogger(__name__)
 BUSY = "C'è già un export in corso."
 EMPTY = "saltato: nessun evento"
 FAILED = "errore imprevisto: il dettaglio è nel log."
-SINGLE_PDF_TITLE = "Calendari per gruppo"
 
 
-def too_big(count: int) -> str:
-    return f"{count} eventi non entrano in un foglio A4. Riduci il periodo o le categorie."
+def too_big(count: int, by: str = "group") -> str:
+    """SPEC §8.4; a sheet per category is trimmed by its groups."""
+    filters = "i gruppi" if by == "category" else "le categorie"
+    return f"{count} eventi non entrano in un foglio A4. Riduci il periodo o {filters}."
 
 
 Status = Literal["running", "done", "failed", "cancelled"]
@@ -53,7 +54,8 @@ class Job:
     #: The new ``Export …`` folder, once created.
     folder: Path | None = None
     files: list[str] = field(default_factory=list)
-    #: ``{group_id, group, reason, message, events}``; reason: empty, too_big, error.
+    #: ``{sheet_id, title, reason, message, events}``; reason: empty, too_big, error.
+    #: ``sheet_id`` is the group's (or the category's) id.
     skipped: list[dict[str, Any]] = field(default_factory=list)
     #: Why the whole export failed (status ``failed``).
     message: str | None = None
@@ -61,8 +63,8 @@ class Job:
     def skip(self, sheet: Sheet, reason: str, message: str) -> None:
         self.skipped.append(
             {
-                "group_id": sheet.group_id,
-                "group": sheet.title,
+                "sheet_id": sheet.subject_id,
+                "title": sheet.title,
                 "reason": reason,
                 "message": message,
                 "events": sheet.event_count,
@@ -150,21 +152,21 @@ def _run(job: Job, prepared: Prepared, cancel: threading.Event) -> None:
                 continue
             laid = lay_out(sheet)
             if laid is None:
-                job.skip(sheet, "too_big", too_big(sheet.event_count))
+                job.skip(sheet, "too_big", too_big(sheet.event_count, request.by))
                 continue
             document, _layout = laid
             pdf = pdf_bytes([document], sheet.title)
             if request.mode == "single_pdf":
                 collected.append(document)
             elif pdfs:
-                _write(job, output.group_file(sheet.title, first, last, "pdf"), pdf)
+                _write(job, output.sheet_file(sheet.title, first, last, "pdf"), pdf)
             if pngs:
                 name = sheet.title
                 _pngs(
                     job,
                     pdf,
                     request.dpi,
-                    lambda n, name=name: output.group_file(name, first, last, "png", n),
+                    lambda n, name=name: output.sheet_file(name, first, last, "png", n),
                     sheet.multipage,
                 )
         except Exception:
@@ -173,7 +175,8 @@ def _run(job: Job, prepared: Prepared, cancel: threading.Event) -> None:
         finally:
             job.done += 1
     if collected and pdfs:
-        _write(job, output.single_pdf_file(first, last), pdf_bytes(collected, SINGLE_PDF_TITLE))
+        title = output.single_pdf_title(request.by)
+        _write(job, output.single_pdf_file(first, last, request.by), pdf_bytes(collected, title))
     job.status = "done"
 
 

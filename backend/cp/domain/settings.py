@@ -49,12 +49,22 @@ class GroupSelection(_Strict):
     category_ids: list[int] | None = None
 
 
+class CategorySelection(_Strict):
+    category_id: int
+    #: ``None`` means every group, including the ones created later.
+    group_ids: list[int] | None = None
+
+
 class ExportLast(_Strict):
     period: Period | None = None
     mode: Literal["per_group", "single_pdf", "combined"] = "per_group"
     formats: list[Literal["pdf", "png"]] = Field(default_factory=lambda: ["pdf"])
     dpi: Literal[150, 200, 300] = 200
+    #: One sheet per group or per category; both choices are kept, so switching
+    #: back finds the other one as it was.
+    by: Literal["group", "category"] = "group"
     selections: list[GroupSelection] = Field(default_factory=list)
+    category_selections: list[CategorySelection] = Field(default_factory=list)
     output_dir: str | None = None
 
 
@@ -133,14 +143,18 @@ def _sanitize(session: Session, key: str, value: Any) -> Any:
         if value.get("category_ids") is not None:
             value["category_ids"] = [i for i in value["category_ids"] if i in categories]
     else:
-        value["selections"] = [
-            {
-                **s,
-                "category_ids": None
-                if s.get("category_ids") is None
-                else [i for i in s["category_ids"] if i in categories],
-            }
-            for s in value.get("selections", [])
-            if s["group_id"] in groups
-        ]
+        value["selections"] = _kept(value.get("selections", []), "group_id", groups, categories)
+        value["category_selections"] = _kept(
+            value.get("category_selections", []), "category_id", categories, groups
+        )
     return value
+
+
+def _kept(selections: list[dict], key: str, own: set[int], others: set[int]) -> list[dict]:
+    """The selections whose item still exists, each without the ids that are gone."""
+    inner = "category_ids" if key == "group_id" else "group_ids"
+    return [
+        {**s, inner: None if s.get(inner) is None else [i for i in s[inner] if i in others]}
+        for s in selections
+        if s[key] in own
+    ]

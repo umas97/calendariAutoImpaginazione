@@ -15,10 +15,10 @@ from fastapi import APIRouter, Response, status
 
 from .. import folders
 from ..export import formatting, render
+from ..export.counts import event_counts
 from ..export.jobs import runner
 from ..export.preview import store
 from ..export.request import ExportRequest, check_request
-from ..export.selection import event_counts
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
@@ -40,13 +40,14 @@ def options() -> dict[str, Any]:
 
 
 class CountsRequest(ExportRequest):
-    #: The ticked groups: the complete calendar counts only these (default: all).
+    #: The ticked groups (or categories): the complete calendar counts only these
+    #: (default: all).
     included: list[int] | None = None
 
 
 @router.post("/counts")
 def counts(body: CountsRequest) -> dict[str, Any]:
-    """Events per group, ticked or not, and in the complete calendar, for the period."""
+    """Events per sheet, ticked or not, and in the complete calendar, for the period."""
     return event_counts(check_request(body, needs_output=False), body.included)
 
 

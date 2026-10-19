@@ -46,7 +46,7 @@ export function ChipSelect({ items, selected, onChange, withMain, invalid, label
               onClick={() => toggle(item.id)}
               className="inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2.5 pl-2.5 hover:bg-ink-700/60"
             >
-              {item.color ? (
+              {withMain ? (
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />
               ) : null}
               {item.name}

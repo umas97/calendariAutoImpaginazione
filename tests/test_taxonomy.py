@@ -123,6 +123,27 @@ def test_colours_are_assigned_from_the_palette_then_start_again(api):
 
 def test_palette_is_served_in_assignment_order(api):
     assert api.get("/api/categories/palette").json() == list(PALETTE)
+    assert api.get("/api/groups/palette").json() == list(PALETTE)
+
+
+def test_groups_have_colours_of_their_own(api):
+    """Groups colour the sheets per category (SPEC §8.3): same rules, own palette turn."""
+    api.category("Messa")
+    first = api.post("/api/groups", json={"name": "Coro"}).json()
+    assert first["color"] == PALETTE[0]  # the categories' colours do not count
+    response = api.post("/api/groups", json={"name": "Cresimandi", "color": "#2a9d8f"})
+    assert response.json()["color"] == "#2A9D8F"
+    assert api.post("/api/groups", json={"name": "Altro", "color": "blu"}).status_code == 422
+    patched = api.patch(f"/api/groups/{first['id']}", json={"color": "#abcdef"})
+    assert patched.json()["color"] == "#ABCDEF"
+    assert api.patch(f"/api/groups/{first['id']}", json={"color": "nero"}).status_code == 422
+    listed = {g["name"]: g["color"] for g in api.get("/api/groups").json()}
+    assert listed == {"Coro": "#ABCDEF", "Cresimandi": "#2A9D8F"}
+
+
+def test_past_the_twelfth_the_palette_starts_again_in_order(api):
+    colors = [api.post("/api/groups", json={"name": f"G{i}"}).json()["color"] for i in range(26)]
+    assert colors == [*PALETTE, *PALETTE, PALETTE[0], PALETTE[1]]
 
 
 # --- test 9 and 10: deletion and orphans ---------------------------------------------

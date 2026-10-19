@@ -14,7 +14,7 @@ import datetime as dt
 import re
 from pathlib import Path
 
-#: Longest group name kept in a file name.
+#: Longest group (or category) name kept in a file name.
 NAME_MAX = 80
 
 _FORBIDDEN = re.compile(r'[/\\:*?"<>|\x00-\x1f\x7f]')
@@ -86,14 +86,18 @@ def span(first: dt.date, last: dt.date) -> str:
     return f"{first.isoformat()}_{last.isoformat()}"
 
 
-def group_file(group: str, first: dt.date, last: dt.date, suffix: str, page: int = 0) -> str:
-    """``<Gruppo> <from>_<to>.pdf``; with ``page``, ``… p2.png``."""
-    stem = f"{clean_name(group)} {span(first, last)}"
+def sheet_file(title: str, first: dt.date, last: dt.date, suffix: str, page: int = 0) -> str:
+    """``<Gruppo> <from>_<to>.pdf`` (or ``<Categoria> …``); with ``page``, ``… p2.png``."""
+    stem = f"{clean_name(title)} {span(first, last)}"
     return f"{stem} p{page}.{suffix}" if page else f"{stem}.{suffix}"
 
 
-def single_pdf_file(first: dt.date, last: dt.date) -> str:
-    return f"Calendari per gruppo {span(first, last)}.pdf"
+def single_pdf_title(by: str) -> str:
+    return "Calendari per categoria" if by == "category" else "Calendari per gruppo"
+
+
+def single_pdf_file(first: dt.date, last: dt.date, by: str = "group") -> str:
+    return f"{single_pdf_title(by)} {span(first, last)}.pdf"
 
 
 def combined_file(first: dt.date, last: dt.date, suffix: str, page: int = 0) -> str:

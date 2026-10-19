@@ -57,7 +57,8 @@ export function FilterMenu({ kind, items, selected, onChange }: Props) {
                 onChange={() => toggle(item.id)}
                 className="h-4 w-4 accent-[var(--color-accent)]"
               />
-              {item.color ? (
+              {/* Groups have a colour too, but the calendar is coloured by category. */}
+              {kind === 'categories' ? (
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: item.color }} />
               ) : null}
               <span className="truncate">{item.name}</span>

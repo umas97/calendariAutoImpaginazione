@@ -81,17 +81,15 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 /** Groups and categories share one shape and one set of routes (SPEC §6). */
 export type Kind = 'groups' | 'categories'
 
-export type Group = {
+/** A group or a category. A group's colour paints only the sheets per category. */
+export type TaxonomyItem = {
   id: number
   name: string
+  color: string
   position: number
   archived: boolean
   event_count: number
 }
-
-export type Category = Group & { color: string }
-
-export type TaxonomyItem = Group & { color?: string }
 
 export type ItemPatch = { name?: string; color?: string; archived?: boolean }
 
@@ -123,7 +121,10 @@ export type ExportMode = 'per_group' | 'single_pdf' | 'combined'
 export type ExportFormat = 'pdf' | 'png'
 export type Dpi = 150 | 200 | 300
 export type Period = { from: string; to: string }
+/** What a sheet is for: a group (filtered by category) or a category (filtered by group). */
+export type ExportBy = 'group' | 'category'
 export type GroupSelection = { group_id: number; category_ids: number[] }
+export type CategorySelection = { category_id: number; group_ids: number[] }
 
 /** The contract of every export, preview and count (SPEC §8.1). */
 export type ExportRequest = {
@@ -131,19 +132,25 @@ export type ExportRequest = {
   mode: ExportMode
   formats: ExportFormat[]
   dpi: Dpi
+  by: ExportBy
+  /** The sheets with `by: 'group'`. */
   selections: GroupSelection[]
+  /** The sheets with `by: 'category'`. */
+  category_selections: CategorySelection[]
   output_dir?: string | null
-  /** Groups laid out over several pages instead of one sheet ("Esporta su più pagine"). */
+  /** Sheets (group or category ids) laid out over several pages ("Esporta su più pagine"). */
   multipage?: number[]
 }
 
-/** The last choices of the Export tab; `category_ids: null` means every category. */
+/** The last choices of the Export tab; `null` inner ids mean all of them. */
 export type ExportLast = {
   period: Period | null
   mode: ExportMode
   formats: ExportFormat[]
   dpi: Dpi
+  by: ExportBy
   selections: { group_id: number; category_ids: number[] | null }[]
+  category_selections: { category_id: number; group_ids: number[] | null }[]
   /** `null`: the default folder. */
   output_dir: string | null
 }
@@ -157,12 +164,13 @@ export type ExportOptions = {
   busy: boolean
 }
 
-export type ExportCounts = { groups: Record<string, number>; combined: number }
+/** Events per sheet (keyed by group or category id) and in the complete calendar. */
+export type ExportCounts = { sheets: Record<string, number>; combined: number }
 
 export type SheetLayout = { columns: number; font_pt: number; multipage: boolean }
 
 export type PreviewSheet = {
-  group_id: number | null
+  sheet_id: number | null
   title: string
   event_count: number
   layout: SheetLayout | null
@@ -172,8 +180,9 @@ export type PreviewSheet = {
 }
 
 export type SkippedSheet = {
-  group_id: number | null
-  group: string
+  /** The group's or the category's id; `null` for the complete calendar. */
+  sheet_id: number | null
+  title: string
   reason: 'empty' | 'too_big' | 'error'
   message: string
   events: number

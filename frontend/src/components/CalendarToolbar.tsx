@@ -1,17 +1,23 @@
 // calendariAutoImpaginazione -- parish group calendars with printable A4 sheets
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// The bar over the calendar (SPEC §9.1): ‹ Oggi ›, the title, Mese / Settimana
+// The bar over the calendar (SPEC §9.1): ‹ Oggi ›, the title (a click opens the
+// months, to jump far without the arrows), Mese / Settimana
 // / Elenco, the two filters and "+ Nuovo evento" -- or, while there is no
 // group or no category, the box that sends the user to create them (the
 // filters would have nothing to offer then).
 import { Link } from 'react-router-dom'
 import type { CalendarFilters, CalendarView, TaxonomyItem } from '../lib/api'
 import { t, type MessageKey } from '../i18n/it'
+import type { IsoDate } from '../lib/dates'
 import { FilterMenu } from './FilterMenu'
+import { MonthJump } from './MonthJump'
 
 type Props = {
   title: string
+  /** A day of the period on screen. */
+  current: IsoDate
+  onJump: (first: IsoDate) => void
   view: CalendarView
   onView: (view: CalendarView) => void
   onPrev: () => void
@@ -48,7 +54,9 @@ export function CalendarToolbar(props: Props) {
           ›
         </button>
       </div>
-      <h2 className="min-w-48 text-lg font-semibold text-ink-50">{props.title}</h2>
+      <h2>
+        <MonthJump title={props.title} current={props.current} onPick={props.onJump} />
+      </h2>
 
       <div role="group" className="flex overflow-hidden rounded-md border border-ink-600">
         {VIEWS.map(({ view, label }) => (

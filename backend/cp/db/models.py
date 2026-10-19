@@ -47,6 +47,8 @@ class Group(Base):
     name: Mapped[str] = mapped_column(String(60))
     #: ``casefold()`` of the name: uniqueness ignores case, archived items included.
     name_key: Mapped[str] = mapped_column(String(60), unique=True)
+    #: Colours the sheets per category only; everywhere else events take their category's.
+    color: Mapped[str] = mapped_column(String(7), server_default="#1976D2")
     position: Mapped[int] = mapped_column(Integer, default=0)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
