@@ -118,6 +118,14 @@ def test_notes_are_optional_trimmed_kept_on_several_lines_and_limited(api, gc):
     assert changed["notes"] == ""
 
 
+def test_print_notes_is_off_unless_chosen(api, gc):
+    assert post(api, body(gc, notes="interna")).json()["print_notes"] is False
+    created = post(api, body(gc, notes="da stampare", print_notes=True)).json()
+    assert created["print_notes"] is True
+    changed = api.put(f"/api/events/{created['id']}", json=body(gc, notes="da stampare")).json()
+    assert changed["print_notes"] is False
+
+
 def test_place_is_optional_stripped_and_limited(api, gc):
     assert post(api, body(gc)).json()["place"] == ""
     assert post(api, body(gc, place="  Oratorio ")).json()["place"] == "Oratorio"
@@ -316,6 +324,7 @@ def test_duplicate_keeps_everything_and_shifts_the_end(api, gc):
             end_time="16:00",
             place="Casa alpina",
             notes="Prenotare il pullman",
+            print_notes=True,
             group_ids=[g2, g],
             category_ids=[c2, c],
         ),
@@ -333,7 +342,8 @@ def test_duplicate_keeps_everything_and_shifts_the_end(api, gc):
         ("2026-12-11", "2026-12-13"),
     ]
     for copy in copies:
-        for field in ("title", "all_day", "start_time", "end_time", "place", "notes", "group_ids"):
+        fields = ("title", "all_day", "start_time", "end_time", "place", "notes", "print_notes")
+        for field in (*fields, "group_ids"):
             assert copy[field] == source[field]
         assert copy["category_ids"] == [c2, c]
 

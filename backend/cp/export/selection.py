@@ -5,8 +5,9 @@
 This is the one place that filters and orders events for an export: the counts
 of the Export screen, the preview and the files all come from
 :func:`build_sheets`. A :class:`Sheet` holds finished text only -- dates already
-written in Italian, colours already chosen -- and no internal notes: the
-renderer cannot show what it is never given (test 12).
+written in Italian, colours already chosen. An event's notes are on its row only
+when the user chose to print them; otherwise the renderer is never given them
+and cannot show them (test 12).
 
 The rule, the same in every mode: an event belongs on group G's sheet when G is
 one of its groups *and* at least one of its categories is selected for G. The
@@ -65,6 +66,8 @@ class Row:
     day_color: str
     #: Complete calendar and sheets per category: the selected groups the event is for.
     groups: tuple[str, ...] = ()
+    #: The event's notes, line breaks kept; empty unless the user chose to print them.
+    notes: str = ""
 
 
 @dataclass(frozen=True)
@@ -254,6 +257,7 @@ def _row(event: Event, colors: tuple[str, ...], groups: tuple[str, ...] = ()) ->
         colors=colors,
         day_color=text_color(colors[0]),
         groups=groups,
+        notes=event.notes if event.print_notes else "",
     )
 
 

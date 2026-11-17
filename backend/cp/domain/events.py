@@ -65,6 +65,7 @@ def to_out(event: Event) -> EventOut:
         end_time=event.end_time,
         place=event.place,
         notes=event.notes,
+        print_notes=event.print_notes,
         group_ids=event.group_ids,
         category_ids=event.category_ids,
         created_at=event.created_at,
@@ -105,6 +106,7 @@ def _apply(event: Event, clean: CleanEvent) -> None:
     event.end_time = clean.end_time
     event.place = clean.place
     event.notes = clean.notes
+    event.print_notes = clean.print_notes
     _set_links(event, clean.group_ids, clean.category_ids)
 
 
@@ -168,6 +170,7 @@ def duplicate_event(session: Session, event_id: int, dates: Iterable[dt.date]) -
             end_time=source.end_time,
             place=source.place,
             notes=source.notes,
+            print_notes=source.print_notes,
         )
         _set_links(copy, source.group_ids, source.category_ids)
         copies.append(copy)

@@ -47,6 +47,8 @@ export const itCalendar = {
   'tooltip.groups': 'Gruppi',
   'tooltip.categories': 'Categorie',
   'tooltip.notes': 'Note',
+  'tooltip.notesPrinted': 'Note (stampate)',
+  'calendar.notesPrinted': 'Note stampate nei fogli esportati',
   'time.at': 'ore {time}',
 
   'event.new': 'Nuovo evento',
@@ -68,6 +70,8 @@ export const itCalendar = {
   'event.archived': 'archiviato',
   'event.notes': 'Note',
   'event.notesHint': 'Solo per te: non compaiono nei fogli esportati',
+  'event.printNotes': 'Stampa le note nei fogli esportati',
+  'event.notesPrintedHint': 'Compaiono per intero sotto l’evento, nei fogli esportati',
   'event.shortcuts': 'Ctrl+Invio salva · Esc chiude',
   'event.save': 'Salva',
   'event.saving': 'Salvataggio…',

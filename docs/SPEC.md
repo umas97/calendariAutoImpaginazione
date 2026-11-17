@@ -210,8 +210,9 @@ nella scheda Export e l'export vero passano tutti da:
 2. `export/render.py` + `autofit.py`: producono il PDF di ogni `Sheet`;
 3. l'anteprima è **lo stesso PDF** rasterizzato a bassa risoluzione.
 
-Nessun'altra parte del codice filtra o ordina eventi per l'export. Le **note interne** (§7.1)
-non entrano nei `Sheet`: il renderer non può mostrarle nemmeno per sbaglio (test 12). Così ciò che si vede
+Nessun'altra parte del codice filtra o ordina eventi per l'export. Le **note interne** (§7.1,
+`print_notes` spento) non entrano nei `Sheet`: il renderer non può mostrarle nemmeno per
+sbaglio (test 12). Entrano solo le note degli eventi in cui l'utente ha scelto di stamparle. Così ciò che si vede
 nell'anteprima è esattamente ciò che si salva.
 
 L'ordinamento cronologico degli eventi è definito **una volta sola**, in
@@ -285,7 +286,8 @@ il loro colore (né nei filtri né nel dialogo evento), per non far credere che 
 | `start_time` | `HH:MM` | sì se non `all_day` | nullo se `all_day` |
 | `end_time` | `HH:MM` | no | nullo se `all_day` |
 | `place` | testo 0–120 | no | vuoto = non mostrato |
-| `notes` | testo 0–2000, anche su più righe | no | **note interne**: si vedono solo nel programma (dialogo e passaggio del mouse), **mai negli export**; tolti solo gli spazi agli estremi. Decisione dell'utente del 2026-10-13 |
+| `notes` | testo 0–2000, anche su più righe | no | si vedono nel programma (dialogo e passaggio del mouse); negli export **solo se `print_notes`** (altrimenti sono **note interne**, decisione dell'utente del 2026-10-13); tolti solo gli spazi agli estremi |
+| `print_notes` | booleano | sì | default falso; **stampa le note nei fogli esportati**, scelto evento per evento (decisione dell'utente del 2026-11-17). Vale in tutti i fogli (per gruppo, per categoria, calendario completo); nessun interruttore generale nella scheda Export. Migrazione `0005`: gli eventi esistenti restano con le note interne |
 | `groups` | lista di id | **≥ 1** | ordine irrilevante |
 | `categories` | lista ordinata di id | **≥ 1** | **la prima è la principale** (colore nel calendario) |
 | `created_at`, `updated_at` | timestamp | auto | |
@@ -330,7 +332,7 @@ il primo mese del periodo), ma il testo mostra sempre le date vere. Test 6.
 - Da un evento: «Duplica…» apre un mini-calendario in cui si selezionano **più date** (clic
   per aggiungere/togliere, fino a **100** date). Sotto, «Verranno creati N eventi».
 - Ogni copia mantiene titolo, orari, `all_day`, durata in giorni (la `end_date` si sposta di
-  conseguenza), luogo, note, gruppi e categorie (con lo stesso ordine).
+  conseguenza), luogo, note (con `print_notes`), gruppi e categorie (con lo stesso ordine).
 - `POST /api/events/{id}/duplicate {dates: [...]}` crea tutte le copie in una transazione e
   restituisce i nuovi id. Date duplicate nella richiesta: una sola copia. Test 8.
 
@@ -445,6 +447,11 @@ A4 verticale (210 × 297 mm), margini 14 mm, font Inter incluso.
   più piccole), colonna orario, titolo in grassetto seguito sulla stessa riga dal luogo in
   grigio (`Incontro di gruppo · Oratorio`, omesso se vuoto). Titolo e luogo vanno a capo se
   non ci stanno, al massimo 2 righe, poi ellissi.
+- **Note stampate** (`print_notes`, §7.1, decisioni dell'utente del 2026-11-17): sotto titolo e
+  luogo, allineate al titolo, più piccole (0.8 em), corsivo (Inter Italic, incluso) grigio
+  `#6B7280`. **Per intero, con gli a capo dell'utente**, senza limite di righe: una nota
+  lunga può far passare il foglio a corpi più piccoli o a due colonne (§8.4); è una scelta
+  dell'utente. La barra si allunga con la riga.
 - Nel calendario completo, dopo il titolo e prima del luogo, i gruppi in piccolo grigio:
   `· Cresimandi, 5ª elementare`.
 - **Foglio per categoria**: titolo = nome della categoria. Barre, numeri dei giorni e legenda
@@ -568,7 +575,13 @@ aggiungere in `window.py`); F11 = schermo intero.
   interruttore «Tutto il giorno» · Ora inizio · Ora fine · Luogo (autocompletamento §7.5) ·
   Gruppi (chip a selezione multipla) · Categorie (chip a selezione multipla col colore; la
   prima scelta è la principale, contrassegnata da una stella; clic sulla stella per cambiarla) ·
-  Note (area di testo, con la dicitura «Solo per te: non compaiono nei fogli esportati»).
+  Note (area di testo) e sotto l'interruttore **«Stampa le note nei fogli esportati»** (spento
+  di default), con la dicitura «Solo per te: non compaiono nei fogli esportati» se spento,
+  «Compaiono per intero sotto l'evento, nei fogli esportati» se acceso.
+- Nel calendario un evento con le note stampate (interruttore acceso e note non vuote) ha un
+  **piccolo anello vuoto** prima del titolo (in Mese, Settimana ed Elenco; senza colore proprio,
+  per non confondersi coi pallini delle categorie) e nel riquadro al passaggio del mouse
+  «Note (stampate):» al posto di «Note:».
 - Pulsanti: **Salva**, **Annulla**; in modifica anche **Duplica…** e **Elimina** (con
   conferma). Errori di validazione accanto al campo.
 - Scorciatoie: `Ctrl+Invio` salva, `Esc` chiude (chiedendo conferma se ci sono modifiche).
@@ -760,7 +773,8 @@ Numerati: i commenti e STATO.md li citano («test 7»).
 11. Archivio: elementi archiviati esclusi dalle liste di scelta, eventi intatti.
 12. Selezione per l'export: regola gruppo ∧ categoria; categorie non selezionate escluse da
     barre e legenda; calendario completo senza duplicati e con le etichette dei gruppi;
-    gruppi senza eventi saltati; le note interne non compaiono nei `Sheet` né nel testo del PDF.
+    gruppi senza eventi saltati; le note interne non compaiono nei `Sheet` né nel testo del PDF;
+    le note con `print_notes` compaiono in ogni tipo di foglio, intere e con gli a capo.
     Per categoria: regola categoria ∧ gruppo, barre e legenda coi colori dei gruppi, nomi dei
     gruppi sulle righe, calendario completo uguale a quello scelto per gruppo, conteggi.
 13. Formattazione in italiano: ogni riga delle tabelle di §8.2, intestazioni di periodo,

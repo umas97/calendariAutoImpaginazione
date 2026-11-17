@@ -105,6 +105,7 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
     end_time: null,
     place: '',
     notes: '',
+    print_notes: false,
     group_ids: onlyOne(filters.group_ids, activeGroups),
     category_ids: onlyOne(filters.category_ids, activeCategories),
     ...extra,

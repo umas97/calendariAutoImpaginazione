@@ -239,7 +239,14 @@ export function EventDialog({ event, draft, groups, categories, ...props }: Prop
             errors.notes ? 'border-red-400' : 'border-ink-600'
           }`}
         />
-        <p className="mt-1 text-xs text-ink-300">{t('event.notesHint')}</p>
+        <div className="mt-1.5">
+          <Toggle checked={form.print_notes} onChange={(on) => set('print_notes', on)}>
+            {t('event.printNotes')}
+          </Toggle>
+        </div>
+        <p className="mt-1 text-xs text-ink-300">
+          {t(form.print_notes ? 'event.notesPrintedHint' : 'event.notesHint')}
+        </p>
       </Row>
 
       {confirm === 'discard' ? (

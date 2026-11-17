@@ -162,14 +162,48 @@ def test_group_without_events_gives_an_empty_sheet(parish, api):
     assert sheets[0].event_count == 0 and sheets[0].months == ()
 
 
-def test_notes_never_reach_a_sheet(parish):
+def test_internal_notes_never_reach_a_sheet(parish):
     p = parish
     for mode in ("per_group", "combined"):
         sheets = build_sheets(
             request([{"group_id": p["cresimandi"], "category_ids": [p["catechesi"]]}], mode=mode)
         )
         assert "SEGRETO" not in repr(sheets)
-        assert not any(hasattr(row, "notes") for sheet in sheets for row in rows(sheet))
+        assert all(row.notes == "" for sheet in sheets for row in rows(sheet))
+
+
+def test_printed_notes_reach_every_kind_of_sheet(parish, api):
+    """The user's switch, per event: its notes go on the row, line breaks kept."""
+    p = parish
+    api.event(
+        [p["cresimandi"]],
+        [p["catechesi"]],
+        title="Uscita",
+        start_date="2026-10-24",
+        notes="Portare il pranzo\nRitrovo alle 8",
+        print_notes=True,
+    )
+    # Switched on but empty: nothing to print.
+    api.event(
+        [p["cresimandi"]],
+        [p["catechesi"]],
+        title="Vuota",
+        start_date="2026-10-25",
+        print_notes=True,
+    )
+    by_group = request([{"group_id": p["cresimandi"], "category_ids": [p["catechesi"]]}])
+    by_category = request(
+        [],
+        by="category",
+        category_selections=[{"category_id": p["catechesi"], "group_ids": [p["cresimandi"]]}],
+    )
+    combined = request(
+        [{"group_id": p["cresimandi"], "category_ids": [p["catechesi"]]}], mode="combined"
+    )
+    for req in (by_group, by_category, combined):
+        notes = {row.title: row.notes for sheet in build_sheets(req) for row in rows(sheet)}
+        assert notes["Uscita"] == "Portare il pranzo\nRitrovo alle 8"
+        assert notes["Incontro"] == "" and notes["Vuota"] == ""
 
 
 def test_counts(parish):

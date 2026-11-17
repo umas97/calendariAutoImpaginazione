@@ -167,6 +167,29 @@ def test_pdf_is_a4_with_inter_embedded_and_real_text(api):
     assert sheet.period in text and "aggiornato al" in text
 
 
+def test_printed_notes_are_whole_italic_and_on_their_own_lines(api):
+    with session_scope() as session:
+        groups, categories = samples.seed_taxonomy(session)
+        (item,) = samples.sample_events(1, FIRST, LAST, [groups[0]], categories)
+        lines = ["Portare il pranzo al sacco"] + [f"Riga numero {i}" for i in range(2, 7)]
+        samples.add_events(
+            session, [item.model_copy(update={"notes": "\n".join(lines), "print_notes": True})]
+        )
+    request = ExportRequest.model_validate(
+        {
+            "period": {"from": FIRST, "to": LAST},
+            "selections": [{"group_id": groups[0], "category_ids": categories}],
+        }
+    )
+    (sheet,) = build_sheets(request)
+    pdf = one_page(fit_sheet(sheet))
+    text = text_of(pdf)
+    # Every line, none clamped like the title, each on its own line.
+    found = [line.strip() for line in text.splitlines()]
+    assert all(line in found for line in lines)
+    assert ("Inter-CP-Italic", True) in font_names(pdf)
+
+
 def test_long_titles_stop_at_two_lines(api):
     with session_scope() as session:
         groups, categories = samples.seed_taxonomy(session)

@@ -53,6 +53,7 @@ class CleanEvent:
     end_time: str | None
     place: str
     notes: str
+    print_notes: bool
     group_ids: list[int]
     category_ids: list[int]
 
@@ -125,6 +126,7 @@ def clean_event(data: EventIn) -> CleanEvent:
         end_time=end_time,
         place=place,
         notes=notes,
+        print_notes=data.print_notes,
         group_ids=group_ids,
         category_ids=category_ids,
     )

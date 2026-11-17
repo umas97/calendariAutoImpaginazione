@@ -3,8 +3,9 @@
 //
 // How an event looks inside FullCalendar, and the panel that appears over it
 // (SPEC §9.1): coloured by the main category, with a small dot for each other
-// category; on hover the time, place, groups, categories and the notes, which
-// are seen only here and in the dialog (SPEC §7.1). Text comes from our data,
+// category; on hover the time, place, groups, categories and the notes. A small
+// ring before the title marks the events whose notes are printed on the
+// exported sheets (SPEC §7.1, §9.1). Text comes from our data,
 // not from FullCalendar's formatting.
 import type { EventContentArg } from '@fullcalendar/core'
 import type { CalendarEvent, TaxonomyItem } from '../lib/api'
@@ -22,6 +23,18 @@ function el(tag: string, className: string, ...children: (Node | string | null)[
   node.className = className
   for (const child of children) if (child !== null) node.append(child)
   return node
+}
+
+/** The notes go on the exported sheets: the user switched it on and wrote some. */
+export const printsNotes = (event: CalendarEvent) => event.print_notes && event.notes !== ''
+
+/** A small hollow ring before the title: unlike the category dots, it has no colour of its own. */
+function printedMark(event: CalendarEvent): HTMLElement | null {
+  if (!printsNotes(event)) return null
+  const ring = el('span', 'inline-block h-1.5 w-1.5 shrink-0 rounded-full border border-current opacity-85')
+  ring.setAttribute('aria-label', t('calendar.notesPrinted'))
+  ring.setAttribute('role', 'img')
+  return ring
 }
 
 function dots(event: CalendarEvent, categories: Lookup): HTMLElement | null {
@@ -50,6 +63,7 @@ export function eventContent(arg: EventContentArg, categories: Lookup): { domNod
     node = el(
       'span',
       'flex items-center gap-2',
+      printedMark(event),
       el('span', 'font-medium', event.title),
       event.place ? el('span', 'text-ink-300', event.place) : null,
       dots(event, categories),
@@ -58,7 +72,13 @@ export function eventContent(arg: EventContentArg, categories: Lookup): { domNod
     node = el(
       'div',
       'h-full overflow-hidden px-1 text-xs leading-tight',
-      el('div', 'flex', el('span', 'font-semibold', event.title), dots(event, categories)),
+      el(
+        'div',
+        'flex items-center gap-1',
+        printedMark(event),
+        el('span', 'font-semibold', event.title),
+        dots(event, categories),
+      ),
       el('div', 'opacity-85', timeSpan(event.start_time!, event.end_time)),
       event.place ? el('div', 'truncate opacity-85', event.place) : null,
     )
@@ -68,6 +88,7 @@ export function eventContent(arg: EventContentArg, categories: Lookup): { domNod
       'div',
       'flex items-center gap-1 overflow-hidden px-1 text-xs',
       time ? el('span', 'shrink-0 tabular-nums opacity-85', time) : null,
+      printedMark(event),
       el('span', 'truncate font-medium', event.title),
       dots(event, categories),
     )
@@ -119,7 +140,9 @@ export function EventTooltip({ event, anchor, groups, categories }: TooltipProps
       </p>
       {event.notes ? (
         <p className="line-clamp-6 border-t border-ink-600 pt-1 whitespace-pre-line text-ink-200">
-          <span className="text-ink-300">{t('tooltip.notes')}: </span>
+          <span className="text-ink-300">
+            {t(printsNotes(event) ? 'tooltip.notesPrinted' : 'tooltip.notes')}:{' '}
+          </span>
           {event.notes}
         </p>
       ) : null}

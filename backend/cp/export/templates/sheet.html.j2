@@ -49,7 +49,7 @@ html { font-size: {{ layout.font_pt }}pt; }
     <div class="bar" style="background: {{ row.colors | bar }}"></div>
     <div class="date{{ ' days' if '–' in row.weekday else '' }}"><span class="weekday">{{ row.weekday }}</span> <span class="day" style="color: {{ row.day_color }}">{{ row.day }}</span></div>
     <div class="time">{{ row.time }}</div>
-    <div class="what"><span class="title">{{ row.title }}</span>{% if row.groups %}<span class="for"> · {{ row.groups | join(', ') }}</span>{% endif %}{% if row.place %}<span class="place"> · {{ row.place }}</span>{% endif %}</div>
+    <div class="what"><div class="line"><span class="title">{{ row.title }}</span>{% if row.groups %}<span class="for"> · {{ row.groups | join(', ') }}</span>{% endif %}{% if row.place %}<span class="place"> · {{ row.place }}</span>{% endif %}</div>{% if row.notes %}<div class="notes">{{ row.notes }}</div>{% endif %}</div>
   </div>
 {% endfor %}
 {% endfor %}

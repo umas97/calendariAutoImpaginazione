@@ -64,8 +64,9 @@ class EventIn(BaseModel):
     start_time: str | None = None
     end_time: str | None = None
     place: str = ""
-    #: Internal, never exported.
     notes: str = ""
+    #: Print the notes on the exported sheets; off: they stay in the program.
+    print_notes: bool = False
     group_ids: list[int] = Field(default_factory=list)
     #: In the user's order: the first is the main category.
     category_ids: list[int] = Field(default_factory=list)
@@ -81,6 +82,7 @@ class EventOut(BaseModel):
     end_time: str | None
     place: str
     notes: str
+    print_notes: bool
     group_ids: list[int]
     category_ids: list[int]
     created_at: dt.datetime

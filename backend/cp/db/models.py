@@ -27,6 +27,7 @@ from sqlalchemy import (
     LargeBinary,
     String,
     Text,
+    false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -101,8 +102,10 @@ class Event(Base):
     start_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     end_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     place: Mapped[str] = mapped_column(String(120), default="")
-    #: For the coordinator only: shown in the program, never in an export.
+    #: Shown in the program; in an export only when ``print_notes`` is on.
     notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    #: The user's choice, per event: print the notes on the exported sheets.
+    print_notes: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=now)
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime, default=now, onupdate=now)
 

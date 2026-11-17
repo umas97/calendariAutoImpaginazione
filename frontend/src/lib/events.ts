@@ -109,6 +109,7 @@ export function toInput(event: CalendarEvent): EventInput {
     end_time: event.end_time,
     place: event.place,
     notes: event.notes,
+    print_notes: event.print_notes,
     group_ids: event.group_ids,
     category_ids: event.category_ids,
   }

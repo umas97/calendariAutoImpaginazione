@@ -58,7 +58,7 @@ def test_created_from_nothing_and_stable_on_second_start(tmp_path):
     assert _rows(path, "alembic_version") == [(f"{head_schema_version():04d}",)]
 
 
-def test_upgrade_keeps_existing_events_and_adds_empty_notes(tmp_path):
+def test_upgrade_keeps_existing_events_with_empty_internal_notes(tmp_path):
     """A database written by an older version: its events survive the migrations."""
     path = tmp_path / "catalog.db"
     old = Database(path)
@@ -77,8 +77,8 @@ def test_upgrade_keeps_existing_events_and_adds_empty_notes(tmp_path):
     new.migrate()
     new.dispose()
     with sqlite3.connect(path) as connection:
-        rows = connection.execute("SELECT title, notes FROM event").fetchall()
-    assert rows == [("Messa", "")]
+        rows = connection.execute("SELECT title, notes, print_notes FROM event").fetchall()
+    assert rows == [("Messa", "", 0)]
     assert ("schema_version", head_schema_version()) in _rows(path, "setting")
 
 

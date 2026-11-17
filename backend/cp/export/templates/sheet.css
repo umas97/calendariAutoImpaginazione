@@ -5,6 +5,7 @@
 @font-face { font-family: "Inter CP"; src: url("fonts/Inter-Regular.otf"); font-weight: 400; }
 @font-face { font-family: "Inter CP"; src: url("fonts/Inter-SemiBold.otf"); font-weight: 600; }
 @font-face { font-family: "Inter CP"; src: url("fonts/Inter-Bold.otf"); font-weight: 700; }
+@font-face { font-family: "Inter CP"; src: url("fonts/Inter-Italic.otf"); font-weight: 400; font-style: italic; }
 
 @page {
   size: A4 portrait;
@@ -97,7 +98,8 @@ h1 {
 .list > .month:first-child { margin-top: 0.4rem; }
 
 /* One event per row (SPEC §8.3, compact row chosen by the user on 2026-10-13):
-   bar · "sab 18" · time · title · place, wrapping to two lines at most.
+   bar · "sab 18" · time · title · place, wrapping to two lines at most;
+   below, the notes when the user chose to print them.
    A table, because its cells stretch the bar to the row's full height and
    WeasyPrint lays tables out much faster than grids. */
 .event {
@@ -128,9 +130,15 @@ h1 {
   font-size: 0.88em;
 }
 
-.what {
-  padding: 0.05em 0 0 0.4em;
-  line-clamp: 2;
+.what { padding: 0.05em 0 0 0.4em; }
+.line { line-clamp: 2; }
+/* Notes the user chose to print: whole, line breaks kept, under title and place. */
+.notes {
+  font-size: 0.8em;
+  font-style: italic;
+  color: #6B7280;
+  white-space: pre-line;
+  margin-top: 0.1em;
 }
 .title { font-weight: 700; }
 .for { font-size: 0.8em; color: #6B7280; }

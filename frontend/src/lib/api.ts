@@ -105,6 +105,8 @@ export type EventInput = {
   end_time: string | null
   place: string
   notes: string
+  /** Print the notes on the exported sheets; off: they stay in the program. */
+  print_notes: boolean
   group_ids: number[]
   /** In the user's order: the first is the main category. */
   category_ids: number[]
