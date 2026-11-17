@@ -4,7 +4,7 @@
 // How an event looks inside FullCalendar, and the panel that appears over it
 // (SPEC §9.1): coloured by the main category, with a small dot for each other
 // category; on hover the time, place, groups, categories and the notes. A small
-// ring before the title marks the events whose notes are printed on the
+// dot before the title marks the events whose notes are printed on the
 // exported sheets (SPEC §7.1, §9.1). Text comes from our data,
 // not from FullCalendar's formatting.
 import type { EventContentArg } from '@fullcalendar/core'
@@ -28,13 +28,16 @@ function el(tag: string, className: string, ...children: (Node | string | null)[
 /** The notes go on the exported sheets: the user switched it on and wrote some. */
 export const printsNotes = (event: CalendarEvent) => event.print_notes && event.notes !== ''
 
-/** A small hollow ring before the title: unlike the category dots, it has no colour of its own. */
+/**
+ * A filled dot before the title, in the text's colour: unlike the category dots
+ * (coloured, after the title) it has no colour of its own.
+ */
 function printedMark(event: CalendarEvent): HTMLElement | null {
   if (!printsNotes(event)) return null
-  const ring = el('span', 'inline-block h-1.5 w-1.5 shrink-0 rounded-full border border-current opacity-85')
-  ring.setAttribute('aria-label', t('calendar.notesPrinted'))
-  ring.setAttribute('role', 'img')
-  return ring
+  const dot = el('span', 'inline-block h-2 w-2 shrink-0 rounded-full bg-current')
+  dot.setAttribute('aria-label', t('calendar.notesPrinted'))
+  dot.setAttribute('role', 'img')
+  return dot
 }
 
 function dots(event: CalendarEvent, categories: Lookup): HTMLElement | null {
