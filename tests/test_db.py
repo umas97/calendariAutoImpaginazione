@@ -82,6 +82,37 @@ def test_upgrade_keeps_existing_events_with_empty_internal_notes(tmp_path):
     assert ("schema_version", head_schema_version()) in _rows(path, "setting")
 
 
+def test_upgrade_keeps_the_links_of_existing_events(tmp_path):
+    """Every migration keeps events' groups and categories (lost by cascade on 2026-11-17)."""
+    path = tmp_path / "catalog.db"
+    old = Database(path)
+    config = db_session.alembic_config()
+    with old.engine.begin() as connection:
+        config.attributes["connection"] = connection
+        command.upgrade(config, "0001")
+        for sql in (
+            "INSERT INTO \"group\" VALUES (1, 'Coro', 'coro', 1, 0)",
+            "INSERT INTO category VALUES (1, 'Messa', 'messa', '#E63946', 1, 0)",
+            "INSERT INTO category VALUES (2, 'Festa', 'festa', '#43AA8B', 2, 0)",
+            "INSERT INTO event (id, title, start_date, all_day, start_time, place, created_at,"
+            " updated_at) VALUES (1, 'Messa', '2026-10-18', 0, '10:30', '', '2026-10-13',"
+            " '2026-10-13')",
+            "INSERT INTO event_group VALUES (1, 1)",
+            "INSERT INTO event_category VALUES (1, 2, 0)",
+            "INSERT INTO event_category VALUES (1, 1, 1)",
+        ):
+            connection.exec_driver_sql(sql)
+    old.dispose()
+
+    new = Database(path)
+    new.migrate()
+    with new.engine.connect() as connection:
+        assert connection.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
+    new.dispose()
+    assert _rows(path, "event_group") == [(1, 1)]
+    assert _rows(path, "event_category") == [(1, 1, 1), (1, 2, 0)]
+
+
 def test_upgrade_moves_categories_off_the_first_palette(tmp_path):
     """Colours of the first palette become the new ones in list order; free colours stay."""
     path = tmp_path / "catalog.db"

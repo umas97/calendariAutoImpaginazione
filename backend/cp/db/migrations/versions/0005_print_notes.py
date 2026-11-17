@@ -19,10 +19,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("event") as batch:
-        batch.add_column(
-            sa.Column("print_notes", sa.Boolean, nullable=False, server_default=sa.false())
-        )
+    # A plain ALTER TABLE: SQLite adds the column in place. Batch mode would
+    # rebuild the table, dropping the old one.
+    op.add_column(
+        "event", sa.Column("print_notes", sa.Boolean, nullable=False, server_default=sa.false())
+    )
 
 
 def downgrade() -> None:

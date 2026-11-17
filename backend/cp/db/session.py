@@ -118,11 +118,30 @@ class Database:
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
 
     def migrate(self) -> None:
-        """Bring the schema to the newest migration, then stamp the file as ours."""
+        """Bring the schema to the newest migration, then stamp the file as ours.
+
+        Foreign keys are off while migrating: a batch migration rebuilds a table
+        by dropping it, and with them on the drop deletes, by cascade, every row
+        that points at it (the links of the events: 2026-11-17). They are
+        checked once the migrations are done, before anything is committed.
+        """
         config = alembic_config()
-        with self.engine.begin() as connection:
-            config.attributes["connection"] = connection
-            command.upgrade(config, "head")
+        with self.engine.connect() as connection:
+            # Outside a transaction, or SQLite ignores it (the driver opens none for a
+            # PRAGMA; the commit only closes SQLAlchemy's own autobegun one).
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+            try:
+                with connection.begin():
+                    config.attributes["connection"] = connection
+                    command.upgrade(config, "head")
+                    broken = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+                    if broken:
+                        raise RuntimeError(f"migration broke foreign keys: {broken[:5]}")
+            finally:
+                connection.rollback()
+                connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+                connection.commit()
         with self.session() as session:
             session.merge(Setting(key=APP_KEY, value=APP_ID))
             session.merge(Setting(key=SCHEMA_VERSION_KEY, value=head_schema_version()))
