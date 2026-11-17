@@ -563,6 +563,12 @@ aggiungere in `window.py`); F11 = schermo intero.
 - Elenco: eventi del mese visualizzato in ordine cronologico (§7.3).
 - **Clic su un giorno vuoto** → nuovo evento con quella data; **selezione di una fascia**
   in Settimana → nuovo evento con data e orari; **clic su un evento** → modifica.
+- **Gesto a due dita sul touchpad** (decisione dell'utente del 2026-11-17): dita verso sinistra →
+  pagina successiva (mese; in Settimana la settimana), verso destra → precedente, come girare
+  pagina. Un gesto gira **una sola pagina** anche se è lungo (soglia 60 px di spostamento
+  orizzontale, gesto finito dopo 220 ms senza eventi, inerzia compresa). Lo scorrimento
+  verticale e lo zoom (Ctrl) restano al browser; il gesto non fa andare avanti/indietro nella
+  cronologia di Chromium. `lib/swipe.ts`.
 - **Trascinamento** di un evento su un altro giorno/orario lo sposta (durata invariata);
   compare un avviso «Evento spostato — Annulla» per 8 secondi.
 - Base vuota (nessun gruppo o nessuna categoria): al posto del pulsante «+ Nuovo evento» un
@@ -579,8 +585,9 @@ aggiungere in `window.py`); F11 = schermo intero.
   di default), con la dicitura «Solo per te: non compaiono nei fogli esportati» se spento,
   «Compaiono per intero sotto l'evento, nei fogli esportati» se acceso.
 - Nel calendario un evento con le note stampate (interruttore acceso e note non vuote) ha un
-  **piccolo anello vuoto** prima del titolo (in Mese, Settimana ed Elenco; senza colore proprio,
-  per non confondersi coi pallini delle categorie) e nel riquadro al passaggio del mouse
+  **pallino pieno** del colore del testo prima del titolo (in Mese, Settimana ed Elenco; senza
+  colore proprio e a sinistra, per non confondersi coi pallini colorati delle categorie, a
+  destra; l'anello vuoto iniziale si vedeva poco, decisione dell'utente del 2026-11-17) e nel riquadro al passaggio del mouse
   «Note (stampate):» al posto di «Note:».
 - Pulsanti: **Salva**, **Annulla**; in modifica anche **Duplica…** e **Elimina** (con
   conferma). Errori di validazione accanto al campo.

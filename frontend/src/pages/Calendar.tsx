@@ -4,7 +4,8 @@
 // "Calendario" (SPEC §9.1): the calendar fills the space under the bar and
 // opens on today. A click on a day (or a selected slot in the week) starts a
 // new event there, a click on an event edits it, dragging moves it with an
-// "Annulla" for 8 seconds. View and filters are remembered (SPEC §10.2); the
+// "Annulla" for 8 seconds. Two fingers left or right on the touchpad turn the
+// month (the week). View and filters are remembered (SPEC §10.2); the
 // date is not: the program always opens on today. Within a session the
 // position survives a visit to another tab.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -22,6 +23,7 @@ import {
   useEventsInvalidated,
 } from '../lib/events'
 import { useSaveSetting, useSettings } from '../lib/settings'
+import { useHorizontalSwipe } from '../lib/swipe'
 import { useItems } from '../lib/taxonomy'
 import { plural, t } from '../i18n/it'
 import { CalendarGrid, FC_VIEW, useStableHandlers } from '../components/CalendarGrid'
@@ -90,6 +92,15 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
     mounted.current = true
   }, [filters, categoryLookup])
   useEventsInvalidated(() => api()?.refetchEvents())
+
+  // Two fingers left or right on the touchpad: next or previous month (week).
+  const grid = useRef<HTMLDivElement>(null)
+  const turn = (to: 'prev' | 'next') => {
+    setHover(null)
+    if (to === 'prev') api()?.prev()
+    else api()?.next()
+  }
+  useHorizontalSwipe(grid, () => turn('prev'), () => turn('next'))
 
   const say = (message: string, action?: Notice['action']) =>
     setNotice({ id: Date.now(), message, action })
@@ -193,7 +204,7 @@ function CalendarScreen({ settings, groups, categories }: ScreenProps) {
         canCreate={canCreate}
         onNew={startNew}
       />
-      <div className="min-h-0 flex-1 p-2">
+      <div ref={grid} className="min-h-0 flex-1 p-2">
         <CalendarGrid
           ref={calendar}
           initialView={initialView}
